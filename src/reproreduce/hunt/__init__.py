@@ -5,7 +5,7 @@ from .execute import ExecutionResult, OutcomeClass, ProgramExecutor
 from .export import export_finding
 from .generator import TensorProgramGenerator
 from .program import Operation, Program, TensorSpec
-from .reduce import reduce_confirmed
+from .reduce import reduce_confirmed, reduce_execution
 
 __all__ = [
     "ConfirmationPolicy",
@@ -25,6 +25,7 @@ __all__ = [
     "confirm",
     "export_finding",
     "reduce_confirmed",
+    "reduce_execution",
     "run_campaign",
     "write_campaign_report",
 ]

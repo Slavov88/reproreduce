@@ -6,6 +6,8 @@ from pathlib import Path
 from ..api import reduce as reduce_program
 from ..core.result import ReductionResult
 from ..oracle.base import FailureOracle
+from .config import TensorConfig
+from .execute import ProgramExecutor
 from .program import Program
 
 
@@ -24,3 +26,21 @@ def reduce_confirmed(
         if output is not None:
             result.export(output)
         return result
+
+
+def reduce_execution(
+    program: Program,
+    configs: tuple[TensorConfig, ...],
+    executor: ProgramExecutor,
+    *,
+    mode: str,
+    timeout: float = 30.0,
+    output: str | Path | None = None,
+) -> ReductionResult:
+    """Reduce a confirmed execution using the same backend/configuration."""
+    return reduce_confirmed(
+        program,
+        executor.source_oracle(configs, mode=mode),
+        timeout=timeout,
+        output=output,
+    )

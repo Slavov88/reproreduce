@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Callable
 
 from ..oracle import CompileDifferenceOracle, GradientDifferenceOracle, OracleResult
+from ..oracle.numerical import ExecutionOutcome
 from .config import TensorConfig
 from .program import Program
 
@@ -72,6 +73,64 @@ class ProgramExecutor:
             backend=self.backend,
             mode=mode,
         )
+
+    def source_oracle(
+        self,
+        configs: tuple[TensorConfig, ...],
+        *,
+        mode: str,
+    ) -> CompileDifferenceOracle | GradientDifferenceOracle:
+        """Build the adapter used when reducing a confirmed generated source."""
+        compiler = self.compiler or (lambda fn: self._compile(fn))
+
+        if mode == "forward":
+            def evaluate(source: str):
+                try:
+                    namespace: dict[str, Any] = {}
+                    exec(compile(source, "reduced_generated.py", "exec"), namespace)
+                    function = namespace["generated_program"]
+                    inputs = tuple(config.materialize() for config in configs)
+                    oracle = CompileDifferenceOracle(compiler=compiler)
+                    reference = oracle._capture(function, *GradientDifferenceOracle._clone_inputs(inputs))
+                    try:
+                        compiled = compiler(function)
+                    except BaseException as error:
+                        candidate = ExecutionOutcome(exception=error)
+                    else:
+                        candidate = oracle._capture(compiled, *GradientDifferenceOracle._clone_inputs(inputs))
+                    return reference, candidate
+                except BaseException as error:
+                    return ExecutionOutcome(exception=error), ExecutionOutcome(exception=error)
+
+            return CompileDifferenceOracle(compiler=compiler, source_evaluator=evaluate)
+
+        if mode == "gradient":
+            gradient_oracle = GradientDifferenceOracle(compiler=compiler)
+
+            def evaluate(source: str):
+                try:
+                    namespace: dict[str, Any] = {}
+                    exec(compile(source, "reduced_generated.py", "exec"), namespace)
+                    function = namespace["generated_program"]
+                    inputs = tuple(config.materialize() for config in configs)
+                    reference_inputs = gradient_oracle._clone_inputs(inputs)
+                    candidate_inputs = gradient_oracle._clone_inputs(inputs)
+                    reference = gradient_oracle._capture_gradients(function, reference_inputs, {})
+                    try:
+                        compiled = compiler(function)
+                    except BaseException as error:
+                        candidate = ExecutionOutcome(exception=error)
+                    else:
+                        candidate = gradient_oracle._capture_gradients(compiled, candidate_inputs, {})
+                    return (
+                        reference.value if reference.exception is None else tuple(),
+                        candidate.value if candidate.exception is None else tuple(),
+                    )
+                except BaseException:
+                    return tuple(), tuple()
+
+            return GradientDifferenceOracle(compiler=compiler, source_evaluator=evaluate)
+        raise ValueError(f"unsupported hunt mode: {mode}")
 
     def _compile(self, function: Callable[..., Any]) -> Callable[..., Any]:
         import torch

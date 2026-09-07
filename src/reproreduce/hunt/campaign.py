@@ -84,6 +84,9 @@ def run_campaign(
                 lambda: selected_executor.run(program, configs, mode=mode),
                 expected=result.classification,
                 policy=policy,
+                expected_fingerprint=(
+                    result.oracle_result.fingerprint if result.oracle_result is not None else None
+                ),
             )
             if confirmed.reproducible:
                 finding = FindingFingerprint.from_case(result, program, configs)

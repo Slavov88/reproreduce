@@ -85,13 +85,18 @@ def confirm(
     *,
     expected: OutcomeClass,
     policy: ConfirmationPolicy = ConfirmationPolicy(),
+    expected_fingerprint: str | None = None,
 ) -> ConfirmationResult:
     classifications: list[OutcomeClass] = []
     successes = 0
     for _ in range(policy.attempts):
         result = run()
         classifications.append(result.classification)
-        if result.classification == expected:
+        fingerprint_matches = (
+            expected_fingerprint is None
+            or (result.oracle_result is not None and result.oracle_result.fingerprint == expected_fingerprint)
+        )
+        if result.classification == expected and fingerprint_matches:
             successes += 1
     return ConfirmationResult(
         attempts=policy.attempts,
