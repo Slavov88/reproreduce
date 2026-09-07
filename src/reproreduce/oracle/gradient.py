@@ -37,13 +37,24 @@ class GradientDifferenceOracle:
         if self.source_evaluator is None:
             raise TypeError("source_evaluator is required for source reduction")
         started = time.perf_counter()
-        reference, candidate = self.source_evaluator(source)
-        result = self.compare(reference, candidate)
+        try:
+            reference, candidate = self.source_evaluator(source)
+            result = self.compare(reference, candidate)
+            returncode = 1 if result.interesting else 0
+            stderr = ""
+        except BaseException as error:
+            result = OracleResult(
+                False,
+                None,
+                metadata={"reason": "source_adapter_exception", "exception": type(error).__name__},
+            )
+            returncode = 1
+            stderr = str(error)
         run = RunResult(
             command=("gradient-difference-adapter",),
-            returncode=1 if result.interesting else 0,
+            returncode=returncode,
             stdout="",
-            stderr="",
+            stderr=stderr,
             duration_seconds=time.perf_counter() - started,
         )
         return run, result
