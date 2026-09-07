@@ -10,6 +10,7 @@ from .cache import CandidateCache
 from .result import ReductionResult
 from .run import RunResult
 from ..reduce.ast import reduce_top_level_statements
+from ..pytorch.tensors import reduce_tensor_constructors
 
 
 class ReductionSession:
@@ -77,6 +78,10 @@ class ReductionSession:
                 self.source, self._preserves_failure
             )
             self._history.extend(ast_history)
+            reduced_source, tensor_history = reduce_tensor_constructors(
+                reduced_source, self._preserves_failure
+            )
+            self._history.extend(tensor_history)
             reduced_run, reduced_result = self._evaluate(reduced_source)
             if not (reduced_result.interesting and self.oracle.same_failure(baseline, reduced_result)):
                 raise RuntimeError("Reducer produced a candidate that does not preserve the baseline failure")

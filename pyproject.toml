@@ -12,6 +12,9 @@ license = { text = "MIT" }
 authors = [{ name = "ReproReduce contributors" }]
 dependencies = []
 
+[project.optional-dependencies]
+test = ["torch>=2.0"]
+
 [project.scripts]
 reproreduce = "reproreduce.cli.main:main"
 
