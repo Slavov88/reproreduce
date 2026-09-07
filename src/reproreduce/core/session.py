@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import statistics
 import tempfile
+import time
 from pathlib import Path
 
 from ..execute.subprocess import execute_candidate
@@ -34,15 +36,26 @@ class ReductionSession:
         self._baseline: OracleResult | None = None
         self._evaluations = 0
         self._history: list[dict[str, object]] = []
+        self._cache: CandidateCache | None = None
+        self._candidate_runs = 0
+        self._cache_hits = 0
+        self._cache_misses = 0
+        self._candidate_durations: list[float] = []
+        self._rejected_transformations = 0
+        self._started_at = 0.0
 
     def _evaluate(self, source: str) -> tuple[RunResult, OracleResult]:
-        cached = self.cache.get(source) if self.cache is not None else None
+        cached = self._cache.get(source) if self._cache is not None else None
         if cached is not None:
+            self._cache_hits += 1
             return cached
+        self._cache_misses += 1
         run = execute_candidate(source, cwd=self.program.parent, timeout=self.timeout)
         result = self.oracle.evaluate(run)
-        if self.cache is not None:
-            self.cache.put(source, run, result)
+        if self._cache is not None:
+            self._cache.put(source, run, result)
+        self._candidate_runs += 1
+        self._candidate_durations.append(run.duration_seconds)
         self._evaluations += 1
         return run, result
 
@@ -59,9 +72,12 @@ class ReductionSession:
                     "fingerprint": result.fingerprint,
                 }
             )
+        else:
+            self._rejected_transformations += 1
         return accepted
 
     def reduce(self) -> ReductionResult:
+        self._started_at = time.perf_counter()
         temporary_cache = self.cache_path is None
         if temporary_cache:
             descriptor, temporary_path = tempfile.mkstemp(suffix=".sqlite3")
@@ -69,7 +85,7 @@ class ReductionSession:
             cache_path = Path(temporary_path)
         else:
             cache_path = self.cache_path
-        self.cache = CandidateCache(cache_path)
+        self._cache = CandidateCache(cache_path)
         try:
             original_run, baseline = self._evaluate(self.source)
             if not baseline.interesting:
@@ -115,11 +131,26 @@ class ReductionSession:
                 original_run=original_run,
                 reduced_run=reduced_run,
                 history=self._history,
+                metrics=self._metrics(),
             )
         finally:
-            self.cache.close()
+            self._cache.close()
             if temporary_cache:
                 try:
                     cache_path.unlink()
                 except OSError:
                     pass
+
+    def _metrics(self) -> dict[str, int | float]:
+        accepted = sum(1 for entry in self._history if "transform" in entry)
+        durations = self._candidate_durations
+        return {
+            "candidate_runs": self._candidate_runs,
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "total_candidate_execution_time": sum(durations),
+            "median_candidate_execution_time": statistics.median(durations) if durations else 0.0,
+            "total_reduction_wall_time": time.perf_counter() - self._started_at,
+            "accepted_transformations": accepted,
+            "rejected_transformations": self._rejected_transformations,
+        }

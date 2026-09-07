@@ -15,6 +15,7 @@ class ReductionResult:
     original_run: RunResult
     reduced_run: RunResult
     history: list[dict[str, object]] = field(default_factory=list)
+    metrics: dict[str, int | float] = field(default_factory=dict)
 
     @property
     def original_loc(self) -> int:
@@ -36,7 +37,9 @@ class ReductionResult:
                 f"Python LOC: {self.reduced_loc:>18}",
                 "",
                 "Failure preserved: yes",
-                f"Candidate evaluations: {len(self.history):>8}",
+                f"Candidate runs: {self.metrics.get('candidate_runs', 0):>14}",
+                f"Cache hits: {self.metrics.get('cache_hits', 0):>17}",
+                f"Reduction wall time: {self.metrics.get('total_reduction_wall_time', 0.0):>8.2f}s",
             ]
         )
 
@@ -66,6 +69,7 @@ class ReductionResult:
                     "original_loc": self.original_loc,
                     "reduced_loc": self.reduced_loc,
                     "history": self.history,
+                    "metrics": self.metrics,
                 },
                 indent=2,
             )
