@@ -39,5 +39,7 @@ jobs:
       - run: >-
           python -m unittest -v
           tests.test_compile_reduction
+          tests.test_gradient
+          tests.test_gradient_reduction
           tests.test_numerical
           tests.test_pytorch
