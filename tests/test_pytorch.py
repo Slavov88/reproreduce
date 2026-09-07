@@ -23,6 +23,37 @@ class PyTorchTensorReductionTests(unittest.TestCase):
                 timeout=15,
             )
 
+    def test_composed_model_and_tensor_reduction(self):
+        result = self._reduce(
+            """import torch
+from torch import nn
+
+class Innocent(nn.Module):
+    def forward(self, x):
+        return x
+
+class Buggy(nn.Module):
+    def forward(self, x):
+        if x.shape[-1] == 7 and x.dtype == torch.bfloat16:
+            raise RuntimeError('REPROREDUCE_TARGET')
+        return x
+
+model = nn.Sequential(
+    Innocent(),
+    Innocent(),
+    Buggy(),
+    Innocent(),
+    Innocent(),
+)
+x = torch.randn(128, 128, 7, dtype=torch.bfloat16)
+model(x)
+"""
+        )
+        self.assertEqual(result.reduced_source.count("Buggy()"), 1)
+        self.assertNotIn("Innocent()", result.reduced_source)
+        self.assertRegex(result.reduced_source, r"torch\.(randn|zeros|ones)\(1, 1, 7, dtype=torch.bfloat16\)")
+        self.assertIn("REPROREDUCE_TARGET", result.reduced_source)
+
     def test_iterated_module_list_reduces_to_indispensable_module(self):
         result = self._reduce(
             """import torch

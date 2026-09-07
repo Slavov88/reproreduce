@@ -14,6 +14,9 @@ from ..pytorch.modules import reduce_module_lists, reduce_sequential_modules
 from ..pytorch.tensors import reduce_tensor_constructors
 
 
+MAX_REDUCTION_PASSES = 2
+
+
 class ReductionSession:
     def __init__(
         self,
@@ -75,22 +78,34 @@ class ReductionSession:
                     f"stderr:\n{original_run.stderr}"
                 )
             self._baseline = baseline
-            reduced_source, ast_history = reduce_top_level_statements(
-                self.source, self._preserves_failure
-            )
-            self._history.extend(ast_history)
-            reduced_source, module_history = reduce_sequential_modules(
-                reduced_source, self._preserves_failure
-            )
-            self._history.extend(module_history)
-            reduced_source, module_list_history = reduce_module_lists(
-                reduced_source, self._preserves_failure
-            )
-            self._history.extend(module_list_history)
-            reduced_source, tensor_history = reduce_tensor_constructors(
-                reduced_source, self._preserves_failure
-            )
-            self._history.extend(tensor_history)
+            reduced_source = self.source
+            for _ in range(MAX_REDUCTION_PASSES):
+                before = reduced_source
+
+                reduced_source, ast_history = reduce_top_level_statements(
+                    reduced_source, self._preserves_failure
+                )
+                self._history.extend(ast_history)
+                reduced_source, module_history = reduce_sequential_modules(
+                    reduced_source, self._preserves_failure
+                )
+                self._history.extend(module_history)
+                reduced_source, module_list_history = reduce_module_lists(
+                    reduced_source, self._preserves_failure
+                )
+                self._history.extend(module_list_history)
+                reduced_source, tensor_history = reduce_tensor_constructors(
+                    reduced_source, self._preserves_failure
+                )
+                self._history.extend(tensor_history)
+                reduced_source, cleanup_history = reduce_top_level_statements(
+                    reduced_source, self._preserves_failure
+                )
+                self._history.extend(cleanup_history)
+
+                if reduced_source == before:
+                    break
+
             reduced_run, reduced_result = self._evaluate(reduced_source)
             if not (reduced_result.interesting and self.oracle.same_failure(baseline, reduced_result)):
                 raise RuntimeError("Reducer produced a candidate that does not preserve the baseline failure")
