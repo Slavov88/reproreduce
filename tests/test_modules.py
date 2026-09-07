@@ -1,7 +1,7 @@
 import ast
 import unittest
 
-from reproreduce.pytorch.modules import reduce_sequential_modules
+from reproreduce.pytorch.modules import reduce_module_lists, reduce_sequential_modules
 
 
 class SequentialModuleReducerTests(unittest.TestCase):
@@ -41,6 +41,37 @@ class SequentialModuleReducerTests(unittest.TestCase):
         source = "model = nn.Sequential(*layers)\n"
         reduced, history = reduce_sequential_modules(source, lambda _: True)
         self.assertEqual(reduced, source)
+        self.assertEqual(history, [])
+
+
+class ModuleListReducerTests(unittest.TestCase):
+    def test_iterated_module_list_reduces(self):
+        source = """class Model:
+    def __init__(self):
+        self.layers = nn.ModuleList([Innocent(), Optional(), Buggy(), Noise()])
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+"""
+        reduced, history = reduce_module_lists(source, lambda candidate: "Buggy()" in candidate)
+        self.assertIn("Buggy()", reduced)
+        self.assertNotIn("Optional()", reduced)
+        self.assertNotIn("Noise()", reduced)
+        self.assertTrue(any(entry["scope"].startswith("nn.ModuleList") for entry in history))
+
+    def test_indexed_module_list_is_left_unchanged(self):
+        source = """class Model:
+    def __init__(self):
+        self.layers = nn.ModuleList([RequiredA(), RequiredB(), Optional()])
+
+    def forward(self, x):
+        return self.layers[1](x)
+"""
+        reduced, history = reduce_module_lists(source, lambda _: True)
+        self.assertIn("self.layers = nn.ModuleList([RequiredA(), RequiredB(), Optional()])", reduced)
+        self.assertIn("self.layers[1](x)", reduced)
         self.assertEqual(history, [])
 
 
