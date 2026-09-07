@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
+from ..core.run import RunResult
 from .base import OracleResult
 from .numerical import CompileDifferenceOracle, ExecutionOutcome
 
@@ -15,6 +18,7 @@ class GradientDifferenceOracle:
     rtol: float = 1e-5
     compiler: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
     loss_fn: Callable[[Any], Any] | None = None
+    source_evaluator: Callable[[str], tuple[tuple[Any, ...], tuple[Any, ...]]] | None = None
 
     def evaluate(self, run: Any) -> OracleResult:
         raise TypeError(
@@ -27,6 +31,22 @@ class GradientDifferenceOracle:
     def compare(self, reference: tuple[Any, ...], candidate: tuple[Any, ...]) -> OracleResult:
         """Compare already-computed gradients by input position."""
         return self._compare_gradients(reference, candidate)
+
+    def evaluate_source(self, source: str, *, cwd: Path, timeout: float) -> tuple[RunResult, OracleResult]:
+        """Evaluate a source candidate through a controlled gradient adapter."""
+        if self.source_evaluator is None:
+            raise TypeError("source_evaluator is required for source reduction")
+        started = time.perf_counter()
+        reference, candidate = self.source_evaluator(source)
+        result = self.compare(reference, candidate)
+        run = RunResult(
+            command=("gradient-difference-adapter",),
+            returncode=1 if result.interesting else 0,
+            stdout="",
+            stderr="",
+            duration_seconds=time.perf_counter() - started,
+        )
+        return run, result
 
     def evaluate_function(self, function: Callable[..., Any], *inputs: Any, **kwargs: Any) -> OracleResult:
         reference_inputs = self._clone_inputs(inputs)
