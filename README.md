@@ -2,7 +2,7 @@
 
 ReproReduce is a framework-aware reducer for Python and PyTorch bug reproducers. It repeatedly simplifies a failing program while checking that the original failure is preserved.
 
-The current release supports self-contained Python scripts, exception matching, recursive statement reduction, conservative PyTorch tensor reduction, repeated-module reduction, and eager-vs-compiled numerical discrepancy checks.
+The current release supports self-contained Python scripts, exception matching, recursive statement reduction, conservative PyTorch tensor reduction, repeated-module reduction, eager-vs-compiled discrepancy checks, and a small PyTorch correctness-search frontend.
 
 ## Why
 
@@ -95,6 +95,23 @@ oracle = CompileDifferenceOracle(atol=1e-5, rtol=1e-5)
 result = oracle.evaluate_function(model, inputs)
 print(result.interesting, result.metadata)
 ```
+
+## PyTorch correctness search
+
+The hunt frontend generates short, shape-valid PyTorch tensor programs, compares eager execution with a selected `torch.compile` backend, confirms and deduplicates numerical or gradient discrepancies, and can hand confirmed source to the reducer. It deliberately treats compiler-only errors as unsupported/error outcomes rather than correctness bugs.
+
+```bash
+reproreduce hunt \
+  --backend aot_eager \
+  --mode gradient \
+  --cases 1000 \
+  --seed 42 \
+  --output .hunt/campaign.json
+```
+
+Supported initial operations include elementwise arithmetic, `sin`, `cos`, `exp`, `relu`, reductions, reshape, transpose, permute, slicing, and concatenation. Configurations cover 1D–3D edge-case shapes, `float32`, `bfloat16`, `float64`, gradients, and contiguous or derived non-contiguous layouts. Use Inductor on Linux/WSL or CI; a local Windows missing-MSVC failure is not a correctness finding.
+
+Search results are candidates only. Re-run findings, test stable and nightly PyTorch where practical, inspect semantics, and search upstream issues before calling one a new bug. The frontend does not file issues automatically.
 
 ## Example
 
