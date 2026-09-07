@@ -50,8 +50,16 @@ class ReductionSession:
             self._cache_hits += 1
             return cached
         self._cache_misses += 1
-        run = execute_candidate(source, cwd=self.program.parent, timeout=self.timeout)
-        result = self.oracle.evaluate(run)
+        source_evaluator = getattr(self.oracle, "evaluate_source", None)
+        if callable(source_evaluator):
+            run, result = source_evaluator(
+                source,
+                cwd=self.program.parent,
+                timeout=self.timeout,
+            )
+        else:
+            run = execute_candidate(source, cwd=self.program.parent, timeout=self.timeout)
+            result = self.oracle.evaluate(run)
         if self._cache is not None:
             self._cache.put(source, run, result)
         self._candidate_runs += 1

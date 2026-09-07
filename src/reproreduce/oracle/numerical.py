@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 from ..core.run import RunResult
@@ -21,6 +23,7 @@ class CompileDifferenceOracle:
     atol: float = 1e-5
     rtol: float = 1e-5
     compiler: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
+    source_evaluator: Callable[[str], tuple[Any, Any]] | None = None
 
     def evaluate(self, run: RunResult) -> OracleResult:
         raise TypeError(
@@ -29,6 +32,27 @@ class CompileDifferenceOracle:
 
     def same_failure(self, baseline: OracleResult, candidate: OracleResult) -> bool:
         return baseline.interesting and candidate.interesting and baseline.fingerprint == candidate.fingerprint
+
+    def evaluate_source(self, source: str, *, cwd: Path, timeout: float) -> tuple[RunResult, OracleResult]:
+        """Evaluate a source candidate through an injected deterministic adapter.
+
+        The adapter is intended for controlled reduction harnesses. Real function
+        comparisons should use :meth:`evaluate_function`, which invokes
+        ``torch.compile`` unless a compiler is injected.
+        """
+        if self.source_evaluator is None:
+            raise TypeError("source_evaluator is required for source reduction")
+        started = time.perf_counter()
+        reference, candidate = self.source_evaluator(source)
+        result = self.compare(reference, candidate)
+        run = RunResult(
+            command=("compile-difference-adapter",),
+            returncode=1 if result.interesting else 0,
+            stdout="",
+            stderr="",
+            duration_seconds=time.perf_counter() - started,
+        )
+        return run, result
 
     def evaluate_function(self, function: Callable[..., Any], *args: Any, **kwargs: Any) -> OracleResult:
         reference = self._capture(function, *args, **kwargs)
