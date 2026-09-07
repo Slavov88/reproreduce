@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
+from .config import TensorConfig
 from .program import Operation, Program, TensorSpec
 
 
@@ -22,13 +23,14 @@ class TensorProgramGenerator:
         self.random = random.Random(seed)
         self.max_operations = max_operations
 
-    def generate(self) -> Program:
-        rank = self.random.choice((1, 2, 3))
-        shape = tuple(self.random.choice(_EDGE_DIMS) for _ in range(rank))
-        inputs = (
-            TensorSpec("x", shape),
-            TensorSpec("y", shape),
-        )
+    def generate(self, config: TensorConfig | None = None) -> Program:
+        if config is None:
+            rank = self.random.choice((1, 2, 3))
+            shape = tuple(self.random.choice(_EDGE_DIMS) for _ in range(rank))
+            inputs = (TensorSpec("x", shape), TensorSpec("y", shape))
+        else:
+            shape = config.shape
+            inputs = (config.to_spec("x"), config.to_spec("y"))
         values = [ValueInfo("x", shape), ValueInfo("y", shape)]
         operations: list[Operation] = []
 
@@ -91,8 +93,9 @@ class TensorProgramGenerator:
             shape = (*value.shape[:-1], max(1, (value.shape[-1] + 1) // 2))
             return Operation.create("slice", (value.name,), step=2), shape
         if kind == "cat":
-            left = self.random.choice(values)
-            compatible = [value for value in values if value.shape == left.shape]
+            candidates = [value for value in values if value.shape]
+            left = self.random.choice(candidates)
+            compatible = [value for value in candidates if value.shape == left.shape]
             right = self.random.choice(compatible)
             output_shape = (*left.shape[:-1], left.shape[-1] + right.shape[-1])
             return Operation.create("cat", (left.name, right.name), dim=len(left.shape) - 1), output_shape
@@ -100,4 +103,4 @@ class TensorProgramGenerator:
 
     @staticmethod
     def _has_matching_shapes(values: list[ValueInfo]) -> bool:
-        return len(values) >= 2
+        return any(value.shape for value in values) and len(values) >= 2

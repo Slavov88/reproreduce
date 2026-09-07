@@ -34,8 +34,17 @@ class TensorConfig:
     def materialize(self) -> Any:
         import torch
 
+        base_shape = self.shape
+        if self.layout == "transpose":
+            if len(self.shape) < 2:
+                raise ValueError("transpose layout requires rank >= 2")
+            base_shape = (self.shape[1], self.shape[0], *self.shape[2:])
+        elif self.layout == "slice":
+            if len(self.shape) < 1:
+                raise ValueError("slice layout requires rank >= 1")
+            base_shape = (*self.shape[:-1], max(1, 2 * self.shape[-1] - 1))
         value = torch.randn(
-            self.shape,
+            base_shape,
             dtype=getattr(torch, self.dtype),
             requires_grad=self.requires_grad,
         )

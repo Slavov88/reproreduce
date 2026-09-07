@@ -75,8 +75,13 @@ class Program:
         lines.extend(["", "", "if __name__ == '__main__':"])
         for item in self.inputs:
             dtype = f"torch.{item.dtype}"
-            shape = ", ".join(str(value) for value in item.shape)
-            if len(item.shape) == 1:
+            base_shape = item.shape
+            if item.layout == "transpose" and len(item.shape) >= 2:
+                base_shape = (item.shape[1], item.shape[0], *item.shape[2:])
+            elif item.layout == "slice" and item.shape:
+                base_shape = (*item.shape[:-1], max(1, 2 * item.shape[-1] - 1))
+            shape = ", ".join(str(value) for value in base_shape)
+            if len(base_shape) == 1:
                 shape += ","
             lines.append(
                 f"    {item.name} = torch.randn(({shape}), dtype={dtype}, "

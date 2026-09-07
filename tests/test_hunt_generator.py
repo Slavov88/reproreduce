@@ -3,7 +3,7 @@ import unittest
 
 import torch
 
-from reproreduce.hunt import TensorProgramGenerator
+from reproreduce.hunt import TensorConfigGenerator, TensorProgramGenerator
 
 
 class HuntGeneratorTests(unittest.TestCase):
@@ -25,6 +25,16 @@ class HuntGeneratorTests(unittest.TestCase):
                     for spec in program.inputs
                 ]
                 output = namespace["generated_program"](*inputs)
+                self.assertTrue(torch.is_tensor(output))
+
+    def test_generated_configured_programs_execute_eagerly(self):
+        for seed in range(40):
+            with self.subTest(seed=seed):
+                config = TensorConfigGenerator(seed).generate()
+                program = TensorProgramGenerator(seed, max_operations=6).generate(config)
+                namespace = {}
+                exec(compile(program.to_source(), "generated.py", "exec"), namespace)
+                output = namespace["generated_program"](config.materialize(), config.materialize())
                 self.assertTrue(torch.is_tensor(output))
 
     def test_generated_programs_are_short(self):

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
-from .config import TensorConfig
+from .config import TensorConfigGenerator
 from .confirm import ConfirmationPolicy, FindingDeduplicator, FindingFingerprint, confirm
 from .execute import OutcomeClass, ProgramExecutor
 from .generator import TensorProgramGenerator
@@ -58,16 +58,11 @@ def run_campaign(
     deduplicator = FindingDeduplicator()
 
     for case_seed in range(seed, seed + cases):
-        program = TensorProgramGenerator(case_seed).generate()
-        configs = tuple(
-            TensorConfig(
-                shape=spec.shape,
-                dtype=spec.dtype,
-                requires_grad=spec.requires_grad,
-                layout="contiguous",
-            )
-            for spec in program.inputs
-        )
+        config = TensorConfigGenerator(case_seed).generate()
+        if mode == "gradient" and not config.requires_grad:
+            config = replace(config, requires_grad=True)
+        program = TensorProgramGenerator(case_seed).generate(config)
+        configs = (config, config)
         stats.cases_generated += 1
         result = selected_executor.run(program, configs, mode=mode)
         stats.classifications[result.classification.value] += 1
