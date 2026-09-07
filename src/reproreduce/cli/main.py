@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from ..api import reduce
@@ -18,6 +19,13 @@ def build_parser() -> argparse.ArgumentParser:
     reduce_parser.add_argument("--timeout", type=float, default=30.0)
     reduce_parser.add_argument("--output", default="repro")
     reduce_parser.add_argument("--cache")
+    hunt_parser = commands.add_parser("hunt", help="search generated PyTorch programs")
+    hunt_parser.add_argument("--backend", choices=["aot_eager", "eager", "inductor"], default="aot_eager")
+    hunt_parser.add_argument("--mode", choices=["forward", "gradient"], default="forward")
+    hunt_parser.add_argument("--cases", type=int, default=100)
+    hunt_parser.add_argument("--seed", type=int, default=0)
+    hunt_parser.add_argument("--confirm-runs", type=int, default=5)
+    hunt_parser.add_argument("--output")
     return parser
 
 
@@ -41,6 +49,28 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(result.summary())
         print(f"Output: {output}")
+        return 0
+    if args.command == "hunt":
+        try:
+            from ..hunt import ConfirmationPolicy
+            from ..hunt.campaign import run_campaign, write_campaign_report
+
+            stats, _ = run_campaign(
+                cases=args.cases,
+                seed=args.seed,
+                backend=args.backend,
+                mode=args.mode,
+                confirmation=ConfirmationPolicy(
+                    attempts=args.confirm_runs,
+                    min_successes=args.confirm_runs,
+                ),
+            )
+        except (ImportError, OSError, RuntimeError, ValueError) as error:
+            print(f"reproreduce: error: {error}", file=sys.stderr)
+            return 1
+        print(json.dumps(stats.to_dict(), indent=2))
+        if args.output:
+            print(f"Output: {write_campaign_report(stats, args.output)}")
         return 0
     return 2
 

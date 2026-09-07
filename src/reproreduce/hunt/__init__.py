@@ -1,3 +1,4 @@
+from .campaign import HuntStats, run_campaign, write_campaign_report
 from .config import TensorConfig, TensorConfigGenerator
 from .confirm import ConfirmationPolicy, ConfirmationResult, FindingDeduplicator, FindingFingerprint, confirm
 from .execute import ExecutionResult, OutcomeClass, ProgramExecutor
@@ -12,6 +13,7 @@ __all__ = [
     "ExecutionResult",
     "FindingDeduplicator",
     "FindingFingerprint",
+    "HuntStats",
     "Operation",
     "OutcomeClass",
     "Program",
@@ -23,4 +25,6 @@ __all__ = [
     "confirm",
     "export_finding",
     "reduce_confirmed",
+    "run_campaign",
+    "write_campaign_report",
 ]
