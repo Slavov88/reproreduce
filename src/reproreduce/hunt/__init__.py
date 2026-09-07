@@ -3,6 +3,7 @@ from .confirm import ConfirmationPolicy, ConfirmationResult, FindingDeduplicator
 from .execute import ExecutionResult, OutcomeClass, ProgramExecutor
 from .generator import TensorProgramGenerator
 from .program import Operation, Program, TensorSpec
+from .reduce import reduce_confirmed
 
 __all__ = [
     "ConfirmationPolicy",
@@ -19,4 +20,5 @@ __all__ = [
     "TensorProgramGenerator",
     "TensorSpec",
     "confirm",
+    "reduce_confirmed",
 ]
