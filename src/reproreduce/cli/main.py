@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         except (ImportError, OSError, RuntimeError, ValueError) as error:
             print(f"reproreduce: error: {error}", file=sys.stderr)
             return 1
-        print(json.dumps(stats.to_dict(), indent=2))
+        print(json.dumps(stats.summary_dict(), indent=2))
         if args.output:
             print(f"Output: {write_campaign_report(stats, args.output)}")
         return 0
