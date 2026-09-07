@@ -80,7 +80,9 @@ result.export("repro")
 
 `ExceptionOracle` matches the configured exception type and optional message pattern. Structured fingerprints normalize temporary paths, line numbers, and hexadecimal addresses. A candidate must preserve the baseline exception type, normalized message signature, and signal when applicable.
 
-`CompileDifferenceOracle` compares eager and compiled function outputs using absolute and relative tolerances. It reports mismatch counts, maximum errors, NaN/Inf mismatches, shape and dtype mismatches, and one-sided exceptions.
+`CompileDifferenceOracle` compares eager and compiled function outputs using absolute and relative tolerances. It reports mismatch counts, maximum errors, NaN/Inf mismatches, shape and dtype mismatches, nested output paths, and one-sided exceptions.
+
+`GradientDifferenceOracle` compares input gradients after explicit output scalarization. It distinguishes numerical, shape, dtype, `None`, NaN, Inf, and execution discrepancies.
 
 ## Compile discrepancy check
 
@@ -105,15 +107,26 @@ reproreduce reduce examples/exception_bug/bug.py \
   --output repro
 ```
 
+## Historical benchmark
+
+The repository includes a reduced, CPU reproducer for [PyTorch issue #91468](https://github.com/pytorch/pytorch/issues/91468), an AOTAutograd gradient correctness issue involving `Tensor.retain_grad()`.
+
+```text
+Original: 39 LOC
+Reduced:  28 LOC
+Failure:  eager [1.0, 1.0] vs aot_eager [None, None]
+```
+
+This demonstrates reduction of a known bug; it is not a claim of automated bug discovery.
+
 ## Current limitations
 
 - Input programs should be self-contained Python scripts.
 - AST output is regenerated with `ast.unparse`; comments and formatting are not preserved.
-- Input programs should be self-contained Python scripts.
-- AST output is regenerated with `ast.unparse`; comments and formatting are not preserved.
 - `ModuleList` reduction is conservative and skips statically indexed containers.
-- Compile-discrepancy source reduction currently uses an explicit source adapter; nested output structures and gradient discrepancies are not implemented.
-- Historical PyTorch regression benchmarks and performance reduction are not included yet.
+- Compile-discrepancy source reduction currently uses an explicit source adapter.
+- Gradient source reduction currently uses an explicit source adapter.
+- Historical benchmarks are illustrative and may require pinned framework versions or backends.
 
 ## Development
 
