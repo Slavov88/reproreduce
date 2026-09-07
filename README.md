@@ -2,7 +2,7 @@
 
 ReproReduce is a framework-aware reducer for Python and PyTorch bug reproducers. It repeatedly simplifies a failing program while checking that the original failure is preserved.
 
-The current release supports self-contained Python scripts, exception matching, recursive statement reduction, and conservative reduction of explicit PyTorch tensor constructors.
+The current release supports self-contained Python scripts, exception matching, recursive statement reduction, conservative PyTorch tensor reduction, repeated-module reduction, and eager-vs-compiled numerical discrepancy checks.
 
 ## Why
 
@@ -71,11 +71,28 @@ result.export("repro")
 - Python statement lists, including nested function, branch, loop, context-manager, and `try` blocks;
 - explicit `torch.randn`, `torch.zeros`, `torch.ones`, `torch.empty`, and `torch.tensor` constructors;
 - tensor shapes, selected values, selected dtypes, and simple contiguous-layout attempts;
+- repeated `nn.Sequential` modules;
+- iteration-based `nn.ModuleList` modules; statically indexed lists are left unchanged;
+- eager-vs-`torch.compile` tensor value, shape, dtype, NaN, Inf, and exception discrepancies;
 - candidates in isolated subprocesses with timeouts and a SQLite evaluation cache.
 
 ## Failure matching
 
 `ExceptionOracle` matches the configured exception type and optional message pattern. Structured fingerprints normalize temporary paths, line numbers, and hexadecimal addresses. A candidate must preserve the baseline exception type, normalized message signature, and signal when applicable.
+
+`CompileDifferenceOracle` compares eager and compiled function outputs using absolute and relative tolerances. It reports mismatch counts, maximum errors, NaN/Inf mismatches, shape and dtype mismatches, and one-sided exceptions.
+
+## Compile discrepancy check
+
+For a direct function comparison:
+
+```python
+from reproreduce import CompileDifferenceOracle
+
+oracle = CompileDifferenceOracle(atol=1e-5, rtol=1e-5)
+result = oracle.evaluate_function(model, inputs)
+print(result.interesting, result.metadata)
+```
 
 ## Example
 
@@ -92,8 +109,11 @@ reproreduce reduce examples/exception_bug/bug.py \
 
 - Input programs should be self-contained Python scripts.
 - AST output is regenerated with `ast.unparse`; comments and formatting are not preserved.
-- PyTorch support currently targets explicit tensor constructors only.
-- Repeated module reduction, `torch.compile` discrepancy oracles, gradient oracles, performance reduction, and historical regression benchmarks are not included yet.
+- Input programs should be self-contained Python scripts.
+- AST output is regenerated with `ast.unparse`; comments and formatting are not preserved.
+- `ModuleList` reduction is conservative and skips statically indexed containers.
+- Compile-discrepancy source reduction currently uses an explicit source adapter; nested output structures and gradient discrepancies are not implemented.
+- Historical PyTorch regression benchmarks and performance reduction are not included yet.
 
 ## Development
 
