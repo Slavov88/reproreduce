@@ -23,6 +23,33 @@ class PyTorchTensorReductionTests(unittest.TestCase):
                 timeout=15,
             )
 
+    def test_sequential_reduces_to_indispensable_module(self):
+        result = self._reduce(
+            """import torch
+from torch import nn
+
+class Innocent(nn.Module):
+    def forward(self, x):
+        return x + 1
+
+class Buggy(nn.Module):
+    def forward(self, x):
+        raise RuntimeError('REPROREDUCE_TARGET')
+
+model = nn.Sequential(
+    Innocent(),
+    Innocent(),
+    Buggy(),
+    Innocent(),
+    Innocent(),
+)
+model(torch.ones(1))
+"""
+        )
+        self.assertEqual(result.reduced_source.count("Buggy()"), 1)
+        self.assertNotIn("Innocent()", result.reduced_source)
+        self.assertIn("RemoveModules", {entry.get("transform") for entry in result.history})
+
     def test_shape_dependent_failure(self):
         result = self._reduce(
             """import torch

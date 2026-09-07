@@ -10,6 +10,7 @@ from .cache import CandidateCache
 from .result import ReductionResult
 from .run import RunResult
 from ..reduce.ast import reduce_top_level_statements
+from ..pytorch.modules import reduce_sequential_modules
 from ..pytorch.tensors import reduce_tensor_constructors
 
 
@@ -78,6 +79,10 @@ class ReductionSession:
                 self.source, self._preserves_failure
             )
             self._history.extend(ast_history)
+            reduced_source, module_history = reduce_sequential_modules(
+                reduced_source, self._preserves_failure
+            )
+            self._history.extend(module_history)
             reduced_source, tensor_history = reduce_tensor_constructors(
                 reduced_source, self._preserves_failure
             )
