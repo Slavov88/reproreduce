@@ -31,7 +31,7 @@ class TensorConfig:
             "layout": self.layout,
         }
 
-    def materialize(self) -> Any:
+    def materialize(self, *, seed: int | None = None) -> Any:
         import torch
 
         base_shape = self.shape
@@ -43,11 +43,20 @@ class TensorConfig:
             if len(self.shape) < 1:
                 raise ValueError("slice layout requires rank >= 1")
             base_shape = (*self.shape[:-1], max(1, 2 * self.shape[-1] - 1))
-        value = torch.randn(
-            base_shape,
-            dtype=getattr(torch, self.dtype),
-            requires_grad=self.requires_grad,
-        )
+        if seed is None:
+            value = torch.randn(
+                base_shape,
+                dtype=getattr(torch, self.dtype),
+                requires_grad=self.requires_grad,
+            )
+        else:
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(seed)
+                value = torch.randn(
+                    base_shape,
+                    dtype=getattr(torch, self.dtype),
+                    requires_grad=self.requires_grad,
+                )
         if self.layout == "transpose":
             if value.ndim < 2:
                 raise ValueError("transpose layout requires rank >= 2")

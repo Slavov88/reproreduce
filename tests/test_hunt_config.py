@@ -29,6 +29,10 @@ class HuntConfigTests(unittest.TestCase):
                 elif config.layout == "slice" and config.shape[-1] > 2:
                     self.assertFalse(tensor.is_contiguous())
 
+    def test_seeded_materialization_is_reproducible(self):
+        config = TensorConfig(shape=(2, 3), dtype="float32")
+        self.assertTrue((config.materialize(seed=11) == config.materialize(seed=11)).all())
+
     def test_invalid_layouts_are_rejected(self):
         with self.assertRaises(ValueError):
             TensorConfig(shape=(2,), layout="transpose").materialize()

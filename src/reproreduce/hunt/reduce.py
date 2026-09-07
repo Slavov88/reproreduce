@@ -34,13 +34,14 @@ def reduce_execution(
     executor: ProgramExecutor,
     *,
     mode: str,
+    input_seed: int | None = None,
     timeout: float = 30.0,
     output: str | Path | None = None,
 ) -> ReductionResult:
     """Reduce a confirmed execution using the same backend/configuration."""
     return reduce_confirmed(
         program,
-        executor.source_oracle(configs, mode=mode),
+        executor.source_oracle(configs, mode=mode, input_seed=input_seed),
         timeout=timeout,
         output=output,
     )

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 
-from reproreduce.hunt import Operation, Program, TensorSpec, export_finding, reduce_confirmed
+from reproreduce.hunt import Operation, Program, TensorConfig, TensorSpec, export_finding, reduce_confirmed
 from reproreduce.oracle import CompileDifferenceOracle
 
 
@@ -25,12 +25,21 @@ class HuntExportTests(unittest.TestCase):
             timeout=5,
         )
         with tempfile.TemporaryDirectory() as directory:
-            output = export_finding(result, Path(directory) / "finding", finding={"class": "forward_mismatch"})
+            output = export_finding(
+                result,
+                Path(directory) / "finding",
+                finding={"class": "forward_mismatch"},
+                program=program,
+                configs=(TensorConfig((2, 3), requires_grad=False),),
+                backend="eager",
+            )
             self.assertEqual(
                 {path.name for path in output.iterdir()},
                 {"repro.py", "report.md", "environment.json", "finding.json"},
             )
-            compile((output / "repro.py").read_text(encoding="utf-8"), "repro.py", "exec")
+            repro_source = (output / "repro.py").read_text(encoding="utf-8")
+            compile(repro_source, "repro.py", "exec")
+            self.assertIn("eager result", repro_source)
             self.assertIn("forward_mismatch", (output / "finding.json").read_text(encoding="utf-8"))
 
 

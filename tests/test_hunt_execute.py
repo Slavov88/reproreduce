@@ -32,12 +32,20 @@ class HuntExecutionTests(unittest.TestCase):
         result = ProgramExecutor(compiler=compiler).run(self._program(), mode="gradient")
         self.assertEqual(result.classification, OutcomeClass.GRADIENT_MISMATCH)
 
-    def test_compiled_exception_is_not_called_a_bug(self):
-        def compiler(_):
+    def test_compile_failure_is_separate_from_runtime_failure(self):
+        def compiler_failure(_):
             raise RuntimeError("unsupported backend")
 
-        result = ProgramExecutor(compiler=compiler).run(self._program(), mode="forward")
-        self.assertEqual(result.classification, OutcomeClass.COMPILED_ERROR)
+        compile_result = ProgramExecutor(compiler=compiler_failure).run(self._program(), mode="forward")
+        self.assertEqual(compile_result.classification, OutcomeClass.COMPILE_FAILURE)
+
+        def runtime_failure(_):
+            def compiled(_x):
+                raise RuntimeError("compiled execution failed")
+            return compiled
+
+        runtime_result = ProgramExecutor(compiler=runtime_failure).run(self._program(), mode="forward")
+        self.assertEqual(runtime_result.classification, OutcomeClass.COMPILED_RUNTIME_FAILURE)
 
 
 if __name__ == "__main__":

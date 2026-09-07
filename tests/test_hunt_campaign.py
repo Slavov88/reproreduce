@@ -14,7 +14,7 @@ class FakeExecutor:
         self.classification = classification
         self.calls = 0
 
-    def run(self, program, configs, *, mode):
+    def run(self, program, configs, *, mode, input_seed=None):
         self.calls += 1
         return ExecutionResult(
             classification=self.classification,
@@ -43,6 +43,10 @@ class HuntCampaignTests(unittest.TestCase):
         self.assertEqual(stats.forward_mismatches, 3)
         self.assertEqual(stats.unique_findings, 3)
         self.assertEqual(len(findings.findings), 3)
+        self.assertEqual(len(stats.cases), 3)
+        self.assertEqual(stats.cases[0]["seed"], 12)
+        self.assertIn("operations", stats.cases[0]["program"])
+        self.assertEqual(len(stats.cases[0]["configs"]), 2)
         self.assertEqual(executor.calls, 9)
 
     def test_candidate_only_errors_are_counted_separately(self):
@@ -51,6 +55,7 @@ class HuntCampaignTests(unittest.TestCase):
             executor=FakeExecutor(OutcomeClass.COMPILED_ERROR),
         )
         self.assertEqual(stats.candidate_only_errors, 2)
+        self.assertEqual(stats.compile_failures, 2)
         self.assertEqual(stats.unique_findings, 0)
         self.assertFalse(findings.findings)
 
