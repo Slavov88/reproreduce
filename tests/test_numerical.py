@@ -82,6 +82,19 @@ class CompileDifferenceOracleTests(unittest.TestCase):
         )
         self.assertFalse(result.interesting)
 
+    def test_nested_tensor_outputs_report_paths(self):
+        reference = {
+            "logits": self.torch.ones(2),
+            "aux": (self.torch.zeros(1), self.torch.ones(1)),
+        }
+        candidate = {
+            "logits": self.torch.ones(2),
+            "aux": (self.torch.zeros(1), self.torch.zeros(1)),
+        }
+        result = self.oracle.compare(reference, candidate)
+        self.assertTrue(result.interesting)
+        self.assertEqual(result.metadata["path"], "output['aux'][1]")
+
     def test_execution_outcomes_can_be_compared_directly(self):
         result = self.oracle.compare(
             ExecutionOutcome(value=self.torch.ones(1)),

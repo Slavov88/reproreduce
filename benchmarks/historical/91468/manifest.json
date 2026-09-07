@@ -1,0 +1,21 @@
+{
+  "name": "pytorch_issue_91468_retain_grad_aot_eager",
+  "upstream_issue": "https://github.com/pytorch/pytorch/issues/91468",
+  "framework": "pytorch",
+  "backend": "aot_eager",
+  "failure_class": "gradient_discrepancy",
+  "device": "cpu",
+  "reported_version": "not specified in the upstream issue",
+  "verified_version": "2.5.1+cu121",
+  "script": "original.py",
+  "reduced_script": "reduced.py",
+  "command": "python original.py",
+  "reduction": {
+    "original_loc": 39,
+    "reduced_loc": 28,
+    "candidate_runs": 97,
+    "cache_hits": 105,
+    "wall_time_seconds": 436.41,
+    "same_z_gradient_discrepancy_preserved": true
+  }
+}

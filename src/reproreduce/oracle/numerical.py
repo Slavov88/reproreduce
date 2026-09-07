@@ -72,7 +72,7 @@ class CompileDifferenceOracle:
 
         if reference.exception is not None or candidate.exception is not None:
             return self._compare_exceptions(reference, candidate)
-        return self._compare_values(reference.value, candidate.value)
+        return self._compare_values(reference.value, candidate.value, path="output")
 
     @staticmethod
     def _as_outcome(value: ExecutionOutcome | Any) -> ExecutionOutcome:
@@ -133,7 +133,7 @@ class CompileDifferenceOracle:
             },
         )
 
-    def _compare_values(self, reference: Any, candidate: Any) -> OracleResult:
+    def _compare_values(self, reference: Any, candidate: Any, *, path: str) -> OracleResult:
         try:
             import torch
         except ImportError:
@@ -141,22 +141,58 @@ class CompileDifferenceOracle:
 
         if torch is not None and (torch.is_tensor(reference) or torch.is_tensor(candidate)):
             if not (torch.is_tensor(reference) and torch.is_tensor(candidate)):
-                return self._simple_result("type_mismatch", reference, candidate)
-            return self._compare_tensors(reference, candidate, torch)
+                return self._simple_result("type_mismatch", reference, candidate, path)
+            return self._compare_tensors(reference, candidate, torch, path)
+
+        if isinstance(reference, dict) or isinstance(candidate, dict):
+            if not isinstance(reference, dict) or not isinstance(candidate, dict):
+                return self._simple_result("structure_mismatch", reference, candidate, path)
+            if set(reference) != set(candidate):
+                return OracleResult(
+                    True,
+                    "compile:structure_mismatch",
+                    metadata={"kind": "structure_mismatch", "path": path},
+                )
+            for key in reference:
+                child_path = f"{path}[{key!r}]"
+                result = self._compare_values(reference[key], candidate[key], path=child_path)
+                if result.interesting:
+                    return result
+            return OracleResult(False, "compile:match", metadata={"kind": "match", "path": path})
+
+        if isinstance(reference, (list, tuple)) or isinstance(candidate, (list, tuple)):
+            if type(reference) is not type(candidate) or not isinstance(reference, (list, tuple)):
+                return self._simple_result("structure_mismatch", reference, candidate, path)
+            if len(reference) != len(candidate):
+                return OracleResult(
+                    True,
+                    "compile:structure_mismatch",
+                    metadata={"kind": "structure_mismatch", "path": path},
+                )
+            for index, (reference_item, candidate_item) in enumerate(zip(reference, candidate)):
+                result = self._compare_values(
+                    reference_item,
+                    candidate_item,
+                    path=f"{path}[{index}]",
+                )
+                if result.interesting:
+                    return result
+            return OracleResult(False, "compile:match", metadata={"kind": "match", "path": path})
 
         if isinstance(reference, (int, float)) and isinstance(candidate, (int, float)):
-            return self._compare_scalars(reference, candidate)
+            return self._compare_scalars(reference, candidate, path)
         if type(reference) is not type(candidate) or reference != candidate:
-            return self._simple_result("value_mismatch", reference, candidate)
-        return OracleResult(False, "compile:match", metadata={"kind": "match"})
+            return self._simple_result("value_mismatch", reference, candidate, path)
+        return OracleResult(False, "compile:match", metadata={"kind": "match", "path": path})
 
-    def _compare_tensors(self, reference: Any, candidate: Any, torch: Any) -> OracleResult:
+    def _compare_tensors(self, reference: Any, candidate: Any, torch: Any, path: str) -> OracleResult:
         if reference.shape != candidate.shape:
             return OracleResult(
                 True,
                 "compile:shape_mismatch",
                 metadata={
                     "kind": "shape_mismatch",
+                    "path": path,
                     "reference_shape": tuple(reference.shape),
                     "candidate_shape": tuple(candidate.shape),
                 },
@@ -167,6 +203,7 @@ class CompileDifferenceOracle:
                 "compile:dtype_mismatch",
                 metadata={
                     "kind": "dtype_mismatch",
+                    "path": path,
                     "reference_dtype": str(reference.dtype),
                     "candidate_dtype": str(candidate.dtype),
                 },
@@ -195,6 +232,7 @@ class CompileDifferenceOracle:
         max_relative = float(finite_relative.max().item()) if finite_relative.numel() else 0.0
         metadata = {
             "kind": "tensor_mismatch" if mismatch_count else "match",
+            "path": path,
             "max_abs_error": max_absolute,
             "max_rel_error": max_relative,
             "mismatching_elements": mismatch_count,
@@ -209,17 +247,17 @@ class CompileDifferenceOracle:
             metadata=metadata,
         )
 
-    def _compare_scalars(self, reference: float | int, candidate: float | int) -> OracleResult:
+    def _compare_scalars(self, reference: float | int, candidate: float | int, path: str) -> OracleResult:
         reference_float = float(reference)
         candidate_float = float(candidate)
         if math.isnan(reference_float) != math.isnan(candidate_float):
-            return self._simple_result("nan_mismatch", reference, candidate)
+            return self._simple_result("nan_mismatch", reference, candidate, path)
         if math.isinf(reference_float) or math.isinf(candidate_float):
             same = reference_float == candidate_float
             return OracleResult(
                 not same,
                 "compile:match" if same else "compile:inf_mismatch",
-                metadata={"kind": "match" if same else "inf_mismatch"},
+                metadata={"kind": "match" if same else "inf_mismatch", "path": path},
             )
         absolute = abs(reference_float - candidate_float)
         relative = absolute / max(abs(reference_float), 1e-12)
@@ -230,6 +268,7 @@ class CompileDifferenceOracle:
             score=absolute,
             metadata={
                 "kind": "value_mismatch" if interesting else "match",
+                "path": path,
                 "max_abs_error": absolute,
                 "max_rel_error": relative,
                 "mismatching_elements": int(interesting),
@@ -238,9 +277,14 @@ class CompileDifferenceOracle:
         )
 
     @staticmethod
-    def _simple_result(kind: str, reference: Any, candidate: Any) -> OracleResult:
+    def _simple_result(kind: str, reference: Any, candidate: Any, path: str | None = None) -> OracleResult:
         return OracleResult(
             True,
             f"compile:{kind}",
-            metadata={"kind": kind, "reference_type": type(reference).__name__, "candidate_type": type(candidate).__name__},
+            metadata={
+                "kind": kind,
+                "path": path,
+                "reference_type": type(reference).__name__,
+                "candidate_type": type(candidate).__name__,
+            },
         )
