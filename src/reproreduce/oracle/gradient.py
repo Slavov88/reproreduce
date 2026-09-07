@@ -24,6 +24,10 @@ class GradientDifferenceOracle:
     def same_failure(self, baseline: OracleResult, candidate: OracleResult) -> bool:
         return baseline.interesting and candidate.interesting and baseline.fingerprint == candidate.fingerprint
 
+    def compare(self, reference: tuple[Any, ...], candidate: tuple[Any, ...]) -> OracleResult:
+        """Compare already-computed gradients by input position."""
+        return self._compare_gradients(reference, candidate)
+
     def evaluate_function(self, function: Callable[..., Any], *inputs: Any, **kwargs: Any) -> OracleResult:
         reference_inputs = self._clone_inputs(inputs)
         candidate_inputs = self._clone_inputs(inputs)
