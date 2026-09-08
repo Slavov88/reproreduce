@@ -17,7 +17,7 @@
 - **INFERRED / FALSE_POSITIVE:** no float32/float64 dynamic-only semantic discrepancy survived the validation funnel. No new PyTorch correctness defect is claimed.
 - **COMPUTATIONALLY VERIFIED:** the alias/mutation campaign completed 400 forward cases (seeds `5000–5399`) with 400 eager-valid cases, 355 completed comparisons, zero semantic mismatches, and 45 candidate-only compiled runtime failures.
 - **COMPUTATIONALLY VERIFIED:** alias coverage included eight patterns at 50 cases each, eight mutation families, float32/float64/bfloat16 controls, and contiguous/transpose/slice layouts. All eager alias relationships were valid.
-- **OBSERVED:** all 45 recorded candidate-only failures were `index_fill_` `BackendCompilerFailed` outcomes. They are compiler-support diagnostics, not correctness findings; a repeat run had 42 such failures and also had zero mismatches.
+- **OBSERVED:** 42 of 45 recorded candidate-only failures were `index_fill_` `BackendCompilerFailed` outcomes; three were isolated `sub_`, `fill_`, or `mul_` cases. They are compiler-support diagnostics, not correctness findings; a repeat run had 42 such failures and also had zero mismatches.
 - **COMPUTATIONALLY VERIFIED:** the alias implementation and campaign support passed the complete 92-test suite at commit `fef8634`.
 
 ## Alias/mutation campaign record
@@ -48,7 +48,7 @@ Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 
 
 - **OBSERVED:** bfloat16 dynamic broadcasts, reductions, and gradient cases produce many reproducible low-precision or nonfinite comparisons, but static controls and higher-precision controls do not support a dynamic-shape defect claim.
 - **OBSERVED:** recompilation is common enough to be diagnostically useful, but it is not itself a correctness failure.
-- **OBSERVED:** Inductor `index_fill_` lowering failed for some generated alias/view-write graphs across all three tested dtypes. These candidate-only errors require a separate backend-support investigation; they are not semantic mismatches.
+- **OBSERVED:** Inductor compilation failed for some generated alias/view-write graphs, predominantly `index_fill_` across all three tested dtypes, with three additional isolated mutation/layout failures. These candidate-only errors require a separate backend-support investigation; they are not semantic mismatches.
 
 ## Unresolved bottlenecks
 
