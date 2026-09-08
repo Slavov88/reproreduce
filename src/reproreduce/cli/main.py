@@ -22,7 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
     hunt_parser = commands.add_parser("hunt", help="search generated PyTorch programs")
     hunt_parser.add_argument("--backend", choices=["aot_eager", "eager", "inductor"], default="aot_eager")
     hunt_parser.add_argument("--mode", choices=["forward", "gradient"], default="forward")
-    hunt_parser.add_argument("--family", choices=["random", "broadcast", "dynamic"], default="random")
+    hunt_parser.add_argument(
+        "--family",
+        choices=["random", "broadcast", "dynamic", "alias_mutation"],
+        default="random",
+    )
     hunt_parser.add_argument("--cases", type=int, default=100)
     hunt_parser.add_argument("--seed", type=int, default=0)
     hunt_parser.add_argument("--confirm-runs", type=int, default=5)

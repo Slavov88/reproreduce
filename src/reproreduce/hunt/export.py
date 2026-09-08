@@ -45,6 +45,15 @@ def export_finding(
                 backend=backend,
                 input_seed=input_seed,
             )
+        elif program.observables:
+            repro_source = _with_alias_harness(
+                repro_source,
+                program,
+                selected_configs,
+                mode=mode,
+                backend=backend,
+                input_seed=input_seed,
+            )
         else:
             repro_source = _with_harness(
                 repro_source,
@@ -143,6 +152,42 @@ def _with_harness(
         lines.append("    for eager_grad, compiled_grad in zip(eager_grads, compiled_grads):")
         lines.append("        if eager_grad is not None and compiled_grad is not None:")
         lines.append("            print('gradient max abs difference:', (eager_grad.to(torch.float64) - compiled_grad.to(torch.float64)).abs().max().item())")
+    return "\n".join(lines) + "\n"
+
+
+def _with_alias_harness(
+    source: str,
+    program: Program,
+    configs: tuple[TensorConfig, ...],
+    *,
+    mode: str,
+    backend: str,
+    input_seed: int,
+) -> str:
+    lines = [source.rstrip(), "", "", "if __name__ == '__main__':", "    import torch", ""]
+    for prefix in ("eager", "compiled"):
+        lines.append(f"    def make_{prefix}_inputs():")
+        for index, (spec, config) in enumerate(zip(program.inputs, configs)):
+            lines.extend(_input_lines(spec.name, config, input_seed + index))
+        lines.append("        return " + ", ".join(spec.name for spec in program.inputs))
+        lines.append("")
+    lines.append("    eager_inputs = make_eager_inputs()")
+    lines.append("    compiled_inputs = make_compiled_inputs()")
+    lines.append(f"    compiled_program = torch.compile(generated_program, backend={backend!r})")
+    lines.append("    eager_result = generated_program(*eager_inputs)")
+    lines.append("    compiled_result = compiled_program(*compiled_inputs)")
+    lines.append("    eager_state = tuple(value.detach().clone() for value in eager_inputs)")
+    lines.append("    compiled_state = tuple(value.detach().clone() for value in compiled_inputs)")
+    lines.append("    print('eager return:', eager_result)")
+    lines.append("    print('compiled return:', compiled_result)")
+    lines.append("    print('eager input state:', eager_state)")
+    lines.append("    print('compiled input state:', compiled_state)")
+    lines.append("    if isinstance(eager_result, tuple) and isinstance(compiled_result, tuple):")
+    lines.append("        for index, (eager_value, compiled_value) in enumerate(zip(eager_result, compiled_result)):")
+    lines.append("            if torch.is_tensor(eager_value) and torch.is_tensor(compiled_value):")
+    lines.append("                print('return item', index, 'max abs difference:', (eager_value.detach().to(torch.float64) - compiled_value.detach().to(torch.float64)).abs().max().item())")
+    lines.append("    for index, (eager_value, compiled_value) in enumerate(zip(eager_state, compiled_state)):")
+    lines.append("        print('input state', index, 'max abs difference:', (eager_value.to(torch.float64) - compiled_value.to(torch.float64)).abs().max().item())")
     return "\n".join(lines) + "\n"
 
 

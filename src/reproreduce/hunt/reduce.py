@@ -17,6 +17,84 @@ from .execute import OutcomeClass, ProgramExecutor
 from .program import Program
 
 
+class AliasExecutionOracle:
+    """Source adapter that compares return values and post-mutation state."""
+
+    def __init__(
+        self,
+        executor: ProgramExecutor,
+        configs: tuple[TensorConfig, ...],
+        *,
+        return_names: tuple[str, ...],
+        alias_pairs: tuple[tuple[str, str, bool], ...],
+        input_seed: int,
+    ):
+        self.executor = executor
+        self.configs = configs
+        self.return_names = return_names
+        self.alias_pairs = alias_pairs
+        self.input_seed = input_seed
+
+    def evaluate_source(self, source: str, *, cwd: Path, timeout: float) -> tuple[RunResult, OracleResult]:
+        started = time.perf_counter()
+        try:
+            namespace: dict[str, Any] = {}
+            exec(compile(source, "reduced_alias.py", "exec"), namespace)
+            function = namespace["generated_program"]
+            compiler = self.executor.compiler or (lambda fn: self.executor._compile(fn))
+            compiled = compiler(function)
+            eager_inputs = self.executor._materialize_inputs(self.configs, self.input_seed)
+            compiled_inputs = self.executor._materialize_inputs(self.configs, self.input_seed)
+            eager = self.executor._capture_alias(function, eager_inputs)
+            if eager.exception is not None:
+                result = OracleResult(False, None, metadata={"kind": "invalid_case"})
+            else:
+                eager_aliases = self.executor._alias_checks(eager.value["return"], self.return_names, self.alias_pairs)
+                if not all(check["valid"] for check in eager_aliases):
+                    result = OracleResult(False, None, metadata={"kind": "invalid_case"})
+                else:
+                    candidate = self.executor._capture_alias(compiled, compiled_inputs)
+                    if candidate.exception is not None:
+                        result = CompileDifferenceOracle().compare(eager, candidate)
+                    else:
+                        candidate_aliases = self.executor._alias_checks(
+                            candidate.value["return"], self.return_names, self.alias_pairs
+                        )
+                        if not all(check["valid"] for check in candidate_aliases):
+                            result = OracleResult(
+                                True,
+                                "alias:relationship_mismatch",
+                                metadata={"kind": "alias_relationship_mismatch", "alias_checks": candidate_aliases},
+                            )
+                        else:
+                            result = CompileDifferenceOracle(
+                                atol=self.executor._oracle_tolerances(self.configs)[0],
+                                rtol=self.executor._oracle_tolerances(self.configs)[1],
+                            ).compare(eager.value, candidate.value)
+            return RunResult(
+                command=("alias-source-adapter",),
+                returncode=1 if result.interesting else 0,
+                stdout="",
+                stderr="",
+                duration_seconds=time.perf_counter() - started,
+            ), result
+        except BaseException as error:
+            return RunResult(
+                command=("alias-source-adapter",),
+                returncode=1,
+                stdout="",
+                stderr=str(error),
+                duration_seconds=time.perf_counter() - started,
+            ), OracleResult(
+                False,
+                None,
+                metadata={"kind": "source_adapter_exception", "exception_type": type(error).__name__},
+            )
+
+    def same_failure(self, baseline: OracleResult, candidate: OracleResult) -> bool:
+        return baseline.interesting and candidate.interesting and baseline.fingerprint == candidate.fingerprint
+
+
 class DynamicTraceOracle:
     """Source adapter that preserves one dynamic callable across a trace."""
 
@@ -202,6 +280,28 @@ def minimize_dynamic_trace(
             ):
                 return DynamicTraceReduction(candidate_trace, selected, len(trace))
     return DynamicTraceReduction(trace, tuple(range(len(trace))), len(trace))
+
+
+def reduce_alias_execution(
+    program: Program,
+    configs: tuple[TensorConfig, ...],
+    executor: ProgramExecutor,
+    *,
+    return_names: tuple[str, ...],
+    alias_pairs: tuple[tuple[str, str, bool], ...],
+    input_seed: int = 0,
+    timeout: float = 30.0,
+    output: str | Path | None = None,
+) -> ReductionResult:
+    """Reduce an aliasing reproducer while preserving state semantics."""
+    oracle = AliasExecutionOracle(
+        executor,
+        configs,
+        return_names=return_names,
+        alias_pairs=alias_pairs,
+        input_seed=input_seed,
+    )
+    return reduce_confirmed(program, oracle, timeout=timeout, output=output)
 
 
 def reduce_execution(

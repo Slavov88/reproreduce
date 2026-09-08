@@ -8,6 +8,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from .alias import AliasMutationGenerator
 from .config import TensorConfigGenerator
 from .confirm import ConfirmationPolicy, FindingDeduplicator, FindingFingerprint, confirm
 from ..oracle import OracleResult
@@ -32,6 +33,7 @@ class HuntStats:
     timeouts: int = 0
     nondeterministic: int = 0
     unique_findings: int = 0
+    invalid_cases: int = 0
     shape_executions: int = 0
     compiled_graphs: int = 0
     recompilations: int = 0
@@ -60,6 +62,7 @@ class HuntStats:
             "timeouts": self.timeouts,
             "nondeterministic": self.nondeterministic,
             "unique_findings": self.unique_findings,
+            "invalid_cases": self.invalid_cases,
             "shape_executions": self.shape_executions,
             "compiled_graphs": self.compiled_graphs,
             "recompilations": self.recompilations,
@@ -86,8 +89,10 @@ def run_campaign(
         raise ValueError("cases must be non-negative")
     if mode not in {"forward", "gradient"}:
         raise ValueError("mode must be 'forward' or 'gradient'")
-    if family not in {"random", "broadcast", "dynamic"}:
-        raise ValueError("family must be 'random', 'broadcast', or 'dynamic'")
+    if family not in {"random", "broadcast", "dynamic", "alias_mutation"}:
+        raise ValueError("family must be 'random', 'broadcast', 'dynamic', or 'alias_mutation'")
+    if family == "alias_mutation" and mode != "forward":
+        raise ValueError("alias_mutation v1 supports forward mode only")
     selected_executor = executor or ProgramExecutor(backend=backend)
     stats = HuntStats(
         experiment={
@@ -100,13 +105,20 @@ def run_campaign(
             "case_timeout": case_timeout,
             "dynamic_compile": family == "dynamic",
             "shape_trace_length": 4 if family == "dynamic" else None,
+            "state_observation": family == "alias_mutation",
         }
     )
     deduplicator = FindingDeduplicator()
 
     for case_seed in range(seed, seed + cases):
         dynamic_case = None
-        if family == "broadcast":
+        alias_case = None
+        if family == "alias_mutation":
+            alias_case = AliasMutationGenerator(case_seed, mode=mode).generate()
+            program = alias_case.program
+            configs = alias_case.configs
+            config_trace = None
+        elif family == "broadcast":
             broadcast_case = StructuredBroadcastGenerator(case_seed, mode=mode).generate()
             program = broadcast_case.program
             configs = broadcast_case.configs
@@ -126,6 +138,15 @@ def run_campaign(
         stats.cases_generated += 1
 
         def invoke_case():
+            if alias_case is not None:
+                return selected_executor.run_alias(
+                    program,
+                    configs,
+                    return_names=alias_case.return_names,
+                    alias_pairs=alias_case.alias_pairs,
+                    mode=mode,
+                    input_seed=case_seed,
+                )
             if dynamic_case is not None:
                 return selected_executor.run_dynamic(
                     program,
@@ -151,12 +172,16 @@ def run_campaign(
         if result.recompilation_observed:
             stats.recompilations += 1
 
-        if result.classification == OutcomeClass.EAGER_ERROR:
+        if result.classification == OutcomeClass.INVALID_CASE:
+            stats.invalid_cases += 1
+            stats.eager_invalid += 1
+        elif result.classification == OutcomeClass.EAGER_ERROR:
             stats.eager_invalid += 1
         elif result.classification != OutcomeClass.INFRASTRUCTURE_ERROR:
             stats.valid_eager += 1
         if result.classification not in {
             OutcomeClass.EAGER_ERROR,
+            OutcomeClass.INVALID_CASE,
             OutcomeClass.COMPILE_FAILURE,
             OutcomeClass.INFRASTRUCTURE_ERROR,
         }:
@@ -226,6 +251,7 @@ def run_campaign(
                 "compiled_graphs": result.compiled_graphs,
                 "recompilation_observed": result.recompilation_observed,
                 "shape_results": result.shape_results,
+                "alias_metadata": result.alias_metadata,
                 "input_seed": case_seed,
                 "family": family,
                 "coverage": program.metadata_dict(),
@@ -306,6 +332,11 @@ def coverage_summary(cases: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
         "mode",
         "dynamic_compile",
         "varying_dim_count",
+        "alias_pattern",
+        "mutation",
+        "overlapping",
+        "observable",
+        "state_observation",
     )
     summary: dict[str, dict[str, int]] = {dimension: {} for dimension in dimensions}
     for case in cases:
@@ -320,6 +351,15 @@ def coverage_summary(cases: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
                 key = str(len(metadata.get("varying_dims", [])))
                 if metadata.get("varying_dims") is not None:
                     summary[dimension][key] = summary[dimension].get(key, 0) + 1
+            elif dimension == "mutation":
+                mutation = metadata.get("mutation", {})
+                key = str(mutation.get("op")) if mutation else ""
+                if key:
+                    summary[dimension][key] = summary[dimension].get(key, 0) + 1
+            elif dimension == "observable":
+                values = metadata.get("observable", [])
+                for item in values:
+                    summary[dimension][str(item)] = summary[dimension].get(str(item), 0) + 1
             elif value is not None:
                 key = str(value)
                 summary[dimension][key] = summary[dimension].get(key, 0) + 1

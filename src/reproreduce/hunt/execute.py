@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Sequence
 
@@ -27,6 +27,7 @@ class OutcomeClass(str, Enum):
     INFRASTRUCTURE_ERROR = "INFRASTRUCTURE_ERROR"
     # Backward-compatible name for callers using the original coarse class.
     COMPILED_ERROR = "COMPILE_FAILURE"
+    INVALID_CASE = "INVALID_CASE"
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,7 @@ class ExecutionResult:
     compiled_graphs: int = 0
     recompilation_observed: bool | None = None
     shape_results: tuple[dict[str, Any], ...] = ()
+    alias_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ProgramExecutor:
@@ -140,6 +142,213 @@ class ProgramExecutor:
             backend=self.backend,
             mode=mode,
             failure_phase=phase["value"],
+        )
+
+    def run_alias(
+        self,
+        program: Program,
+        configs: tuple[TensorConfig, ...],
+        *,
+        return_names: tuple[str, ...],
+        alias_pairs: tuple[tuple[str, str, bool], ...],
+        mode: str = "forward",
+        input_seed: int | None = None,
+    ) -> ExecutionResult:
+        """Compare return values and post-mutation state for an aliasing case."""
+        if mode != "forward":
+            raise ValueError("alias_mutation v1 supports forward mode only")
+        phase: dict[str, str | None] = {"value": None}
+        backend_called = {"value": False}
+        compiled_graphs = {"value": 0}
+        uses_default_compiler = self.compiler is None
+        try:
+            namespace: dict[str, Any] = {}
+            exec(compile(program.to_source(), "generated_alias_program.py", "exec"), namespace)
+            function = namespace["generated_program"]
+            eager_inputs = self._materialize_inputs(configs, input_seed)
+            compiled_inputs = self._materialize_inputs(configs, input_seed)
+            compiler = self.compiler or (
+                lambda fn: self._compile(fn, backend_called, compiled_graphs=compiled_graphs)
+            )
+            try:
+                compiled = compiler(function)
+            except BaseException as error:
+                phase["value"] = "compile"
+                result = OracleResult(
+                    True,
+                    "alias:compile_failure",
+                    metadata={
+                        "kind": "candidate_only_exception",
+                        "exception_type": type(error).__name__,
+                        "exception_message": str(error),
+                    },
+                )
+                return ExecutionResult(
+                    classification=OutcomeClass.COMPILE_FAILURE,
+                    oracle_result=result,
+                    program_id=program.identity,
+                    backend=self.backend,
+                    mode=mode,
+                    failure_phase=phase["value"],
+                    compiled_graphs=compiled_graphs["value"],
+                    recompilation_observed=compiled_graphs["value"] > 1,
+                )
+            eager = self._capture_alias(function, eager_inputs)
+            if eager.exception is not None:
+                return self._alias_invalid_result(program, mode, "eager_error", eager.exception)
+            eager_aliases = self._alias_checks(eager.value["return"], return_names, alias_pairs)
+            if not all(check["valid"] for check in eager_aliases):
+                return self._alias_invalid_result(
+                    program,
+                    mode,
+                    "alias_relationship_invalid",
+                    metadata={"alias_checks": eager_aliases},
+                )
+            compiled = self._capture_alias(compiled, compiled_inputs)
+            phase["value"] = "runtime"
+            if compiled.exception is not None:
+                comparison = CompileDifferenceOracle().compare(eager, compiled)
+            else:
+                compiled_aliases = self._alias_checks(compiled.value["return"], return_names, alias_pairs)
+                if not all(check["valid"] for check in compiled_aliases):
+                    comparison = OracleResult(
+                        True,
+                        "alias:relationship_mismatch",
+                        metadata={
+                            "kind": "alias_relationship_mismatch",
+                            "reason": "compiled_alias_relationship_invalid",
+                            "alias_checks": compiled_aliases,
+                        },
+                    )
+                else:
+                    comparison = CompileDifferenceOracle(
+                        atol=self._oracle_tolerances(configs)[0],
+                        rtol=self._oracle_tolerances(configs)[1],
+                    ).compare(eager.value, compiled.value)
+                    if comparison.interesting:
+                        metadata = dict(comparison.metadata)
+                        metadata.setdefault("reason", "observable_state_mismatch")
+                        comparison = OracleResult(
+                            True,
+                            comparison.fingerprint,
+                            comparison.score,
+                            metadata,
+                        )
+            if uses_default_compiler and not backend_called["value"]:
+                metadata = dict(comparison.metadata)
+                metadata.update({"kind": "backend_not_invoked", "backend": self.backend})
+                comparison = OracleResult(False, None, comparison.score, metadata)
+                classification = OutcomeClass.INFRASTRUCTURE_ERROR
+            else:
+                classification = self._classification(comparison, mode, phase["value"])
+            alias_metadata = {
+                "return_names": return_names,
+                "compiled_graphs": compiled_graphs["value"],
+                "return_observables_compared": True,
+                "eager_aliases": eager_aliases,
+                "compiled_aliases": (
+                    compiled_aliases if compiled.exception is None else []
+                ),
+            }
+            return ExecutionResult(
+                classification=classification,
+                oracle_result=comparison,
+                program_id=program.identity,
+                backend=self.backend,
+                mode=mode,
+                failure_phase=phase["value"],
+                compiled_graphs=compiled_graphs["value"],
+                recompilation_observed=compiled_graphs["value"] > 1,
+                alias_metadata=alias_metadata,
+            )
+        except BaseException as error:
+            result = OracleResult(
+                False,
+                None,
+                metadata={
+                    "kind": "infrastructure_error",
+                    "exception_type": type(error).__name__,
+                    "exception_message": str(error),
+                },
+            )
+            return ExecutionResult(
+                classification=OutcomeClass.INFRASTRUCTURE_ERROR,
+                oracle_result=result,
+                program_id=program.identity,
+                backend=self.backend,
+                mode=mode,
+                failure_phase=phase["value"],
+                compiled_graphs=compiled_graphs["value"],
+                recompilation_observed=compiled_graphs["value"] > 1,
+            )
+
+    @staticmethod
+    def _capture_alias(function: Callable[..., Any], inputs: tuple[Any, ...]) -> ExecutionOutcome:
+        try:
+            output = function(*inputs)
+            snapshots = tuple(
+                value.detach().clone() if hasattr(value, "detach") else value
+                for value in inputs
+            )
+            return ExecutionOutcome(value={"return": output, "inputs": snapshots})
+        except BaseException as error:
+            return ExecutionOutcome(exception=error)
+
+    @staticmethod
+    def _alias_checks(
+        output: Any,
+        return_names: tuple[str, ...],
+        alias_pairs: tuple[tuple[str, str, bool], ...],
+    ) -> list[dict[str, Any]]:
+        import torch
+
+        values = output if isinstance(output, tuple) else (output,)
+        mapping = dict(zip(return_names, values))
+        checks = []
+        for left, right, expected in alias_pairs:
+            left_value = mapping.get(left)
+            right_value = mapping.get(right)
+            observed = False
+            if torch.is_tensor(left_value) and torch.is_tensor(right_value):
+                try:
+                    observed = bool(torch._C._is_alias_of(left_value, right_value))
+                except AttributeError:
+                    observed = left_value.untyped_storage().data_ptr() == right_value.untyped_storage().data_ptr()
+            checks.append(
+                {
+                    "left": left,
+                    "right": right,
+                    "expected": expected,
+                    "observed": observed,
+                    "valid": observed == expected,
+                    "left_shape": tuple(left_value.shape) if torch.is_tensor(left_value) else None,
+                    "right_shape": tuple(right_value.shape) if torch.is_tensor(right_value) else None,
+                    "left_stride": tuple(left_value.stride()) if torch.is_tensor(left_value) else None,
+                    "right_stride": tuple(right_value.stride()) if torch.is_tensor(right_value) else None,
+                }
+            )
+        return checks
+
+    def _alias_invalid_result(
+        self,
+        program: Program,
+        mode: str,
+        reason: str,
+        error: BaseException | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> ExecutionResult:
+        details = dict(metadata or {})
+        details.update({"kind": "invalid_case", "reason": reason})
+        if error is not None:
+            details.update({"exception_type": type(error).__name__, "exception_message": str(error)})
+        return ExecutionResult(
+            classification=OutcomeClass.INVALID_CASE,
+            oracle_result=OracleResult(False, None, metadata=details),
+            program_id=program.identity,
+            backend=self.backend,
+            mode=mode,
+            failure_phase="eager",
+            alias_metadata=details,
         )
 
     def run_dynamic(
