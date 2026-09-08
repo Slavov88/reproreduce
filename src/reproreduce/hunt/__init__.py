@@ -5,6 +5,13 @@ from .dynamic import DynamicCase, DynamicShapeGenerator
 from .confirm import ConfirmationPolicy, ConfirmationResult, FindingDeduplicator, FindingFingerprint, confirm
 from .execute import ExecutionResult, OutcomeClass, ProgramExecutor
 from .export import export_finding
+from .failures import (
+    cluster_failure_records,
+    failure_metadata,
+    failure_stage,
+    load_failure_clusters,
+    normalize_failure_message,
+)
 from .generator import BroadcastCase, StructuredBroadcastGenerator, TensorProgramGenerator
 from .program import Operation, Program, TensorSpec
 from .reduce import (
@@ -29,6 +36,11 @@ __all__ = [
     "DynamicTraceReduction",
     "ExecutionResult",
     "FindingDeduplicator",
+    "cluster_failure_records",
+    "failure_metadata",
+    "failure_stage",
+    "load_failure_clusters",
+    "normalize_failure_message",
     "FindingFingerprint",
     "HuntStats",
     "Operation",

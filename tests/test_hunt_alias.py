@@ -91,6 +91,23 @@ class AliasMutationTests(unittest.TestCase):
             self.assertIn("overlapping", report["coverage"])
             self.assertEqual(coverage_summary(report["cases"]), report["coverage"])
 
+    def test_harness_timeout_is_not_reclassified_as_compiler_failure(self):
+        from reproreduce.hunt.execute import HuntTimeout
+
+        case = AliasMutationGenerator(5000).generate()
+
+        def timeout(_function):
+            raise HuntTimeout("case exceeded budget")
+
+        with self.assertRaises(HuntTimeout):
+            ProgramExecutor(backend="test", compiler=timeout).run_alias(
+                case.program,
+                case.configs,
+                return_names=case.return_names,
+                alias_pairs=case.alias_pairs,
+                input_seed=5000,
+            )
+
     def test_gradient_mode_is_explicitly_rejected_for_v1(self):
         with self.assertRaises(ValueError):
             run_campaign(

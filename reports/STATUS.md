@@ -2,7 +2,7 @@
 
 ## Current frontier
 
-**OBSERVED:** `feat/bug-hunter` now supports deterministic generic, structured broadcasting, dynamic-shape, and storage-alias/mutation PyTorch Inductor campaigns. Dynamic cases compile one callable with `dynamic=True` and reuse it over a four-shape trace. Alias cases validate storage relationships and compare returned observables plus post-mutation state.
+**OBSERVED:** `feat/bug-hunter` now supports deterministic generic, structured broadcasting, dynamic-shape, storage-alias/mutation, and compiler-failure triage workflows. Dynamic cases compile one callable with `dynamic=True` and reuse it over a four-shape trace. Alias cases validate storage relationships and compare returned observables plus post-mutation state.
 
 ## Confirmed results
 
@@ -17,8 +17,11 @@
 - **INFERRED / FALSE_POSITIVE:** no float32/float64 dynamic-only semantic discrepancy survived the validation funnel. No new PyTorch correctness defect is claimed.
 - **COMPUTATIONALLY VERIFIED:** the alias/mutation campaign completed 400 forward cases (seeds `5000–5399`) with 400 eager-valid cases, 355 completed comparisons, zero semantic mismatches, and 45 candidate-only compiled runtime failures.
 - **COMPUTATIONALLY VERIFIED:** alias coverage included eight patterns at 50 cases each, eight mutation families, float32/float64/bfloat16 controls, and contiguous/transpose/slice layouts. All eager alias relationships were valid.
-- **OBSERVED:** 42 of 45 recorded candidate-only failures were `index_fill_` `BackendCompilerFailed` outcomes; three were isolated `sub_`, `fill_`, or `mul_` cases. They are compiler-support diagnostics, not correctness findings; a repeat run had 42 such failures and also had zero mismatches.
-- **COMPUTATIONALLY VERIFIED:** the alias implementation and campaign support passed the complete 92-test suite at commit `fef8634`.
+- **COMPUTATIONALLY VERIFIED:** the 45 original alias candidate-only records cluster into 42 `index_fill_` backend-wrapped assertions and 3 harness-timeout artifacts. The three timeout seeds pass fresh rechecks with an extended budget.
+- **COMPUTATIONALLY VERIFIED:** the 42-case index-fill cluster minimizes to a 13-nonblank-line legal reproducer: `index_fill` on a non-contiguous transpose/slice view. Direct-base and contiguous-view controls pass; transpose/slice-view controls fail across float32, float64, and bfloat16 on stable Inductor.
+- **COMPUTATIONALLY VERIFIED:** the minimal stable reproducer passes on the tested current nightly `2.15.0.dev20260907+cpu` in five fresh processes and across the 15-cell control matrix.
+- **KNOWN_EXISTING_ISSUE / FIXED_IN_NIGHTLY:** the cluster matches PyTorch issue #178952. No current or novel PyTorch defect is claimed.
+- **COMPUTATIONALLY VERIFIED:** the alias implementation and compiler-failure triage support passed the complete 99-test suite after the triage changes.
 
 ## Alias/mutation campaign record
 
@@ -48,7 +51,7 @@ Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 
 
 - **OBSERVED:** bfloat16 dynamic broadcasts, reductions, and gradient cases produce many reproducible low-precision or nonfinite comparisons, but static controls and higher-precision controls do not support a dynamic-shape defect claim.
 - **OBSERVED:** recompilation is common enough to be diagnostically useful, but it is not itself a correctness failure.
-- **OBSERVED:** Inductor compilation failed for some generated alias/view-write graphs, predominantly `index_fill_` across all three tested dtypes, with three additional isolated mutation/layout failures. These candidate-only errors require a separate backend-support investigation; they are not semantic mismatches.
+- **OBSERVED:** the original 30-second in-process campaign budget wrapped three cold-compilation timeouts as `BackendCompilerFailed`; this was a ReproReduce classification bug and is now fixed. The remaining index-fill failure is an AOTAutograd functional-graph assertion in the Inductor path.
 
 ## Unresolved bottlenecks
 
@@ -56,8 +59,10 @@ Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 
 - Guard/recompilation counts are secondary observations and rely on a compatibility wrapper around private backend lookup.
 - The dynamic v1 grammar excludes zero-sized dimensions, mutation, explicit aliasing, and view/write interactions.
 - Alias/mutation v1 is forward-only and excludes zero-sized dimensions, autograd aliasing, and nightly validation.
-- The alias campaign has no minimized semantic finding because no semantic mismatch survived; `index_fill_` compiler-only failures remain untriaged beyond classification.
+- The original campaign does not retain full tracebacks; fresh standalone reproductions provide exact AOTAutograd stage evidence.
+- CUDA-nightly validation of the minimized reproducer remains untested; current nightly validation used a CPU-only wheel.
+- The control matrix excludes empty/negative indices, alternate index dtypes, gradients, dynamic shapes, and GPU tensors.
 
 ## Next highest-value experiment
 
-Extend alias/mutation coverage to zero-sized dimensions, autograd, and explicit view/write interactions in a separate milestone. Retain the eager/static/dynamic validation funnel and do not treat compiler-only failures or graph-count changes as correctness defects.
+Stop this triage milestone. Do not begin another broad campaign. A later targeted regression check may compare the minimized view/index-fill reproducer on a current CUDA nightly, with explicit approval.

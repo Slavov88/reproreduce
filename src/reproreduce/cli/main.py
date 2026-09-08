@@ -38,6 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     hunt_parser.add_argument("--output")
     hunt_parser.add_argument("--coverage-output")
+    summarize_parser = commands.add_parser("summarize", help="cluster hunt failure records")
+    summarize_parser.add_argument("campaign")
     return parser
 
 
@@ -61,6 +63,16 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(result.summary())
         print(f"Output: {output}")
+        return 0
+    if args.command == "summarize":
+        try:
+            from ..hunt.failures import load_failure_clusters
+
+            clusters = load_failure_clusters(args.campaign)
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            print(f"reproreduce: error: {error}", file=sys.stderr)
+            return 1
+        print(json.dumps({"cluster_count": len(clusters), "clusters": clusters}, indent=2, sort_keys=True))
         return 0
     if args.command == "hunt":
         try:

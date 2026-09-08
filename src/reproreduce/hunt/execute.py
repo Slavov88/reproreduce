@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import traceback
 from typing import Any, Callable, Sequence
 
 from ..oracle import CompileDifferenceOracle, GradientDifferenceOracle, OracleResult
 from ..oracle.numerical import ExecutionOutcome
 from .config import TensorConfig
+from .failures import failure_metadata
 from .program import Program
 
 
@@ -116,6 +118,7 @@ class ProgramExecutor:
                 ).evaluate_function(function, *inputs)
             else:
                 raise ValueError(f"unsupported hunt mode: {mode}")
+            result = self._annotate_failure(result, phase["value"])
             classification = self._classification(result, mode, phase["value"])
             if uses_default_compiler and phase["value"] == "runtime" and not backend_called["value"]:
                 metadata = dict(result.metadata)
@@ -172,16 +175,29 @@ class ProgramExecutor:
             )
             try:
                 compiled = compiler(function)
+            except HuntTimeout:
+                raise
             except BaseException as error:
                 phase["value"] = "compile"
+                metadata = {
+                    "kind": "candidate_only_exception",
+                    "exception_type": type(error).__name__,
+                    "exception_message": str(error),
+                }
+                metadata.update(
+                    failure_metadata(
+                        type(error).__name__,
+                        str(error),
+                        phase=phase["value"],
+                        traceback_text="".join(
+                            traceback.format_exception(type(error), error, error.__traceback__)
+                        ),
+                    )
+                )
                 result = OracleResult(
                     True,
-                    "alias:compile_failure",
-                    metadata={
-                        "kind": "candidate_only_exception",
-                        "exception_type": type(error).__name__,
-                        "exception_message": str(error),
-                    },
+                    metadata["failure_fingerprint"],
+                    metadata=metadata,
                 )
                 return ExecutionResult(
                     classification=OutcomeClass.COMPILE_FAILURE,
@@ -208,6 +224,11 @@ class ProgramExecutor:
             phase["value"] = "runtime"
             if compiled.exception is not None:
                 comparison = CompileDifferenceOracle().compare(eager, compiled)
+                comparison = self._annotate_failure(
+                    comparison,
+                    phase["value"],
+                    error=compiled.exception,
+                )
             else:
                 compiled_aliases = self._alias_checks(compiled.value["return"], return_names, alias_pairs)
                 if not all(check["valid"] for check in compiled_aliases):
@@ -261,6 +282,8 @@ class ProgramExecutor:
                 recompilation_observed=compiled_graphs["value"] > 1,
                 alias_metadata=alias_metadata,
             )
+        except HuntTimeout:
+            raise
         except BaseException as error:
             result = OracleResult(
                 False,
@@ -291,6 +314,8 @@ class ProgramExecutor:
                 for value in inputs
             )
             return ExecutionOutcome(value={"return": output, "inputs": snapshots})
+        except HuntTimeout:
+            raise
         except BaseException as error:
             return ExecutionOutcome(exception=error)
 
@@ -705,6 +730,31 @@ class ProgramExecutor:
         return torch.compile(function, **compile_kwargs)
 
     @staticmethod
+    def _annotate_failure(
+        result: OracleResult,
+        phase: str | None,
+        *,
+        error: BaseException | None = None,
+    ) -> OracleResult:
+        if result.metadata.get("kind") not in {"candidate_only_exception", "reference_only_exception"}:
+            return result
+        metadata = dict(result.metadata)
+        metadata.update(
+            failure_metadata(
+                metadata.get("exception_type"),
+                metadata.get("exception_message"),
+                phase=phase,
+                traceback_text=(
+                    "".join(traceback.format_exception(type(error), error, error.__traceback__))
+                    if error is not None
+                    else None
+                ),
+            )
+        )
+        fingerprint = metadata.get("failure_fingerprint") or result.fingerprint
+        return OracleResult(result.interesting, fingerprint, result.score, metadata)
+
+    @staticmethod
     def _classification(
         result: OracleResult,
         mode: str,
@@ -714,8 +764,19 @@ class ProgramExecutor:
             return OutcomeClass.PASS
         kind = str(result.metadata.get("kind", ""))
         if kind == "candidate_only_exception":
-            if failure_phase == "compile":
+            stage = result.metadata.get("failure_stage")
+            if stage in {
+                "compile_wrapper",
+                "dynamo_capture",
+                "aot_autograd",
+                "functionalization",
+                "inductor_lowering",
+                "code_generation",
+                "triton_compile",
+            } or failure_phase == "compile":
                 return OutcomeClass.COMPILE_FAILURE
+            if stage == "harness_timeout":
+                return OutcomeClass.TIMEOUT
             return OutcomeClass.COMPILED_RUNTIME_FAILURE
         if kind == "reference_only_exception":
             return OutcomeClass.EAGER_ERROR

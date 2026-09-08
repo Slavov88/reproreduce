@@ -183,6 +183,7 @@ def run_campaign(
             OutcomeClass.EAGER_ERROR,
             OutcomeClass.INVALID_CASE,
             OutcomeClass.COMPILE_FAILURE,
+            OutcomeClass.TIMEOUT,
             OutcomeClass.INFRASTRUCTURE_ERROR,
         }:
             stats.compiled_cases += 1
@@ -308,6 +309,7 @@ def _run_with_timeout(
                 fingerprint=None,
                 metadata={
                     "kind": "timeout",
+                    "failure_stage": "harness_timeout",
                     "timeout_seconds": timeout,
                     "exception_message": str(error),
                 },
