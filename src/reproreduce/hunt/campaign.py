@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import signal
+import threading
 from collections import Counter
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -8,7 +10,8 @@ from typing import Any
 
 from .config import TensorConfigGenerator
 from .confirm import ConfirmationPolicy, FindingDeduplicator, FindingFingerprint, confirm
-from .execute import OutcomeClass, ProgramExecutor
+from ..oracle import OracleResult
+from .execute import ExecutionResult, HuntTimeout, OutcomeClass, ProgramExecutor
 from .generator import TensorProgramGenerator
 
 
@@ -65,6 +68,8 @@ def run_campaign(
     mode: str = "forward",
     confirmation: ConfirmationPolicy | None = None,
     executor: ProgramExecutor | None = None,
+    case_timeout: float | None = 120.0,
+    checkpoint: str | Path | None = None,
 ) -> tuple[HuntStats, FindingDeduplicator]:
     if cases < 0:
         raise ValueError("cases must be non-negative")
@@ -82,8 +87,17 @@ def run_campaign(
         configs = (config, config)
         stats.cases_generated += 1
 
-        def run_case():
+        def invoke_case():
             return selected_executor.run(program, configs, mode=mode, input_seed=case_seed)
+
+        def run_case():
+            return _run_with_timeout(
+                invoke_case,
+                program_id=program.identity,
+                backend=backend,
+                mode=mode,
+                timeout=case_timeout,
+            )
 
         result = run_case()
         stats.classifications[result.classification.value] += 1
@@ -166,7 +180,50 @@ def run_campaign(
                 "finding_id": finding_id,
             }
         )
+        if checkpoint is not None:
+            write_campaign_report(stats, checkpoint)
     return stats, deduplicator
+
+
+def _run_with_timeout(
+    run: Any,
+    *,
+    program_id: str,
+    backend: str,
+    mode: str,
+    timeout: float | None,
+) -> ExecutionResult:
+    if timeout is None or timeout <= 0 or not hasattr(signal, "SIGALRM"):
+        return run()
+    if threading.current_thread() is not threading.main_thread():
+        return run()
+
+    def alarm_handler(_signum: int, _frame: Any) -> None:
+        raise HuntTimeout(f"case exceeded {timeout} seconds")
+
+    previous_handler = signal.signal(signal.SIGALRM, alarm_handler)
+    signal.setitimer(signal.ITIMER_REAL, timeout)
+    try:
+        return run()
+    except HuntTimeout as error:
+        return ExecutionResult(
+            classification=OutcomeClass.TIMEOUT,
+            oracle_result=OracleResult(
+                interesting=False,
+                fingerprint=None,
+                metadata={
+                    "kind": "timeout",
+                    "timeout_seconds": timeout,
+                    "exception_message": str(error),
+                },
+            ),
+            program_id=program_id,
+            backend=backend,
+            mode=mode,
+        )
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
 
 
 def write_campaign_report(stats: HuntStats, output: str | Path) -> Path:

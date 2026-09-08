@@ -10,6 +10,10 @@ from .config import TensorConfig
 from .program import Program
 
 
+class HuntTimeout(TimeoutError):
+    """Raised by a campaign guard when one generated case exceeds its budget."""
+
+
 class OutcomeClass(str, Enum):
     PASS = "PASS"
     EAGER_ERROR = "EAGER_ERROR"
@@ -106,6 +110,8 @@ class ProgramExecutor:
                 metadata.update({"kind": "backend_not_invoked", "backend": self.backend})
                 result = OracleResult(False, None, metadata=metadata)
                 classification = OutcomeClass.INFRASTRUCTURE_ERROR
+        except HuntTimeout:
+            raise
         except BaseException as error:
             result = OracleResult(
                 interesting=False,

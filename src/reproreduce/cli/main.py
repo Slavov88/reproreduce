@@ -25,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     hunt_parser.add_argument("--cases", type=int, default=100)
     hunt_parser.add_argument("--seed", type=int, default=0)
     hunt_parser.add_argument("--confirm-runs", type=int, default=5)
+    hunt_parser.add_argument("--case-timeout", type=float, default=120.0)
     hunt_parser.add_argument("--output")
     return parser
 
@@ -64,6 +65,8 @@ def main(argv: list[str] | None = None) -> int:
                     attempts=args.confirm_runs,
                     min_successes=args.confirm_runs,
                 ),
+                case_timeout=args.case_timeout,
+                checkpoint=args.output,
             )
         except (ImportError, OSError, RuntimeError, ValueError) as error:
             print(f"reproreduce: error: {error}", file=sys.stderr)
