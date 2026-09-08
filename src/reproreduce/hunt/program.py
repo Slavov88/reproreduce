@@ -47,6 +47,7 @@ class Program:
     operations: tuple[Operation, ...]
     output: str
     differentiable: bool = True
+    metadata: tuple[tuple[str, Any], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -54,7 +55,11 @@ class Program:
             "operations": [item.to_dict() for item in self.operations],
             "output": self.output,
             "differentiable": self.differentiable,
+            "metadata": dict(self.metadata),
         }
+
+    def metadata_dict(self) -> dict[str, Any]:
+        return dict(self.metadata)
 
     def serialize(self) -> str:
         return json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
@@ -106,7 +111,14 @@ class Program:
         kwargs = operation.kwargs_dict()
         name = operation.name
         if name in {"add", "sub", "mul", "div"}:
-            return f"{args[0]} { {'add': '+', 'sub': '-', 'mul': '*', 'div': '/'}[name] } {args[1]}"
+            right = args[1]
+            if name == "div" and kwargs.get("safe_denominator"):
+                right = f"(torch.abs({right}) + 0.5)"
+            return f"{args[0]} { {'add': '+', 'sub': '-', 'mul': '*', 'div': '/'}[name] } {right}"
+        if name in {"maximum", "minimum"}:
+            return f"torch.{name}({args[0]}, {args[1]})"
+        if name == "where":
+            return f"torch.where({args[0]} > 0, {args[0]}, {args[1]})"
         if name in {"sin", "cos", "exp", "log", "relu"}:
             return f"torch.{name}({args[0]})"
         if name in {"sum", "mean"}:

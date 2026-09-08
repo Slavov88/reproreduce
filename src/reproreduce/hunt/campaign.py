@@ -12,7 +12,7 @@ from .config import TensorConfigGenerator
 from .confirm import ConfirmationPolicy, FindingDeduplicator, FindingFingerprint, confirm
 from ..oracle import OracleResult
 from .execute import ExecutionResult, HuntTimeout, OutcomeClass, ProgramExecutor
-from .generator import TensorProgramGenerator
+from .generator import StructuredBroadcastGenerator, TensorProgramGenerator
 
 
 @dataclass
@@ -33,6 +33,7 @@ class HuntStats:
     unique_findings: int = 0
     classifications: Counter[str] = field(default_factory=Counter)
     cases: list[dict[str, Any]] = field(default_factory=list)
+    experiment: dict[str, Any] = field(default_factory=dict)
 
     def summary_dict(self) -> dict[str, Any]:
         data = self.to_dict()
@@ -57,6 +58,8 @@ class HuntStats:
             "unique_findings": self.unique_findings,
             "classifications": dict(self.classifications),
             "cases": self.cases,
+            "experiment": self.experiment,
+            "coverage": coverage_summary(self.cases),
         }
 
 
@@ -70,21 +73,39 @@ def run_campaign(
     executor: ProgramExecutor | None = None,
     case_timeout: float | None = None,
     checkpoint: str | Path | None = None,
+    family: str = "random",
 ) -> tuple[HuntStats, FindingDeduplicator]:
     if cases < 0:
         raise ValueError("cases must be non-negative")
     if mode not in {"forward", "gradient"}:
         raise ValueError("mode must be 'forward' or 'gradient'")
+    if family not in {"random", "broadcast"}:
+        raise ValueError("family must be 'random' or 'broadcast'")
     selected_executor = executor or ProgramExecutor(backend=backend)
-    stats = HuntStats()
+    stats = HuntStats(
+        experiment={
+            "family": family,
+            "backend": backend,
+            "mode": mode,
+            "seed_start": seed,
+            "cases_requested": cases,
+            "confirmation_attempts": (confirmation.attempts if confirmation else 5),
+            "case_timeout": case_timeout,
+        }
+    )
     deduplicator = FindingDeduplicator()
 
     for case_seed in range(seed, seed + cases):
-        config = TensorConfigGenerator(case_seed).generate()
-        if mode == "gradient" and not config.requires_grad:
-            config = replace(config, requires_grad=True)
-        program = TensorProgramGenerator(case_seed).generate(config)
-        configs = (config, config)
+        if family == "broadcast":
+            broadcast_case = StructuredBroadcastGenerator(case_seed, mode=mode).generate()
+            program = broadcast_case.program
+            configs = broadcast_case.configs
+        else:
+            config = TensorConfigGenerator(case_seed).generate()
+            if mode == "gradient" and not config.requires_grad:
+                config = replace(config, requires_grad=True)
+            program = TensorProgramGenerator(case_seed).generate(config)
+            configs = (config, config)
         stats.cases_generated += 1
 
         def invoke_case():
@@ -160,6 +181,8 @@ def run_campaign(
                 "program": program.to_dict(),
                 "configs": [config.to_dict() for config in configs],
                 "input_seed": case_seed,
+                "family": family,
+                "coverage": program.metadata_dict(),
                 "backend": backend,
                 "mode": mode,
                 "classification": result.classification.value,
@@ -224,6 +247,35 @@ def _run_with_timeout(
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, previous_handler)
+
+
+def coverage_summary(cases: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    dimensions = ("broadcast_pattern", "dtype", "layout", "post_op", "mode")
+    summary: dict[str, dict[str, int]] = {dimension: {} for dimension in dimensions}
+    for case in cases:
+        metadata = case.get("coverage", {})
+        for dimension in dimensions:
+            value = metadata.get(dimension)
+            if dimension == "layout":
+                values = metadata.get("input_layouts", [])
+                for item in values:
+                    summary[dimension][item] = summary[dimension].get(item, 0) + 1
+            elif value is not None:
+                key = str(value)
+                summary[dimension][key] = summary[dimension].get(key, 0) + 1
+    return summary
+
+
+def write_coverage_summary(stats: HuntStats, output: str | Path) -> Path:
+    path = Path(output)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    coverage = coverage_summary(stats.cases)
+    lines = ["# Hunt coverage", "", "| Dimension | Cell | Count |", "|---|---|---:|"]
+    for dimension, cells in coverage.items():
+        for cell, count in sorted(cells.items()):
+            lines.append(f"| {dimension} | {cell} | {count} |")
+    path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+    return path
 
 
 def write_campaign_report(stats: HuntStats, output: str | Path) -> Path:
