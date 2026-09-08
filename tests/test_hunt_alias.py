@@ -45,6 +45,22 @@ class AliasMutationTests(unittest.TestCase):
         self.assertEqual(len(patterns), 8)
         self.assertEqual(len(mutations), 8)
 
+    def test_alias_export_harness_mentions_return_and_state_observables(self):
+        from reproreduce.hunt.export import _with_alias_harness
+
+        case = AliasMutationGenerator(5000).generate()
+        source = _with_alias_harness(
+            case.program.to_source(),
+            case.program,
+            case.configs,
+            mode="forward",
+            backend="aot_eager",
+            input_seed=5000,
+        )
+        ast.parse(source)
+        self.assertIn("eager input state", source)
+        self.assertIn("return item", source)
+
     def test_mutating_view_changes_base_storage(self):
         case = AliasMutationGenerator(5000).generate()
         namespace = {}
