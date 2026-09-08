@@ -22,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     hunt_parser = commands.add_parser("hunt", help="search generated PyTorch programs")
     hunt_parser.add_argument("--backend", choices=["aot_eager", "eager", "inductor"], default="aot_eager")
     hunt_parser.add_argument("--mode", choices=["forward", "gradient"], default="forward")
+    hunt_parser.add_argument("--family", choices=["random", "broadcast"], default="random")
     hunt_parser.add_argument("--cases", type=int, default=100)
     hunt_parser.add_argument("--seed", type=int, default=0)
     hunt_parser.add_argument("--confirm-runs", type=int, default=5)
@@ -32,6 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="per-case budget in seconds; 0 disables the budget",
     )
     hunt_parser.add_argument("--output")
+    hunt_parser.add_argument("--coverage-output")
     return parser
 
 
@@ -59,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "hunt":
         try:
             from ..hunt import ConfirmationPolicy
-            from ..hunt.campaign import run_campaign, write_campaign_report
+            from ..hunt.campaign import run_campaign, write_campaign_report, write_coverage_summary
 
             stats, _ = run_campaign(
                 cases=args.cases,
@@ -72,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 case_timeout=args.case_timeout,
                 checkpoint=args.output,
+                family=args.family,
             )
         except (ImportError, OSError, RuntimeError, ValueError) as error:
             print(f"reproreduce: error: {error}", file=sys.stderr)
@@ -79,6 +82,12 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(stats.summary_dict(), indent=2))
         if args.output:
             print(f"Output: {write_campaign_report(stats, args.output)}")
+            coverage_output = args.coverage_output
+            if coverage_output is None:
+                from pathlib import Path
+
+                coverage_output = str(Path(args.output).with_suffix(".coverage.md"))
+            print(f"Coverage: {write_coverage_summary(stats, coverage_output)}")
         return 0
     return 2
 
