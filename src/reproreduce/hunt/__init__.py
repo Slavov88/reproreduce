@@ -6,7 +6,13 @@ from .execute import ExecutionResult, OutcomeClass, ProgramExecutor
 from .export import export_finding
 from .generator import BroadcastCase, StructuredBroadcastGenerator, TensorProgramGenerator
 from .program import Operation, Program, TensorSpec
-from .reduce import reduce_confirmed, reduce_execution
+from .reduce import (
+    DynamicTraceReduction,
+    minimize_dynamic_trace,
+    reduce_confirmed,
+    reduce_dynamic_execution,
+    reduce_execution,
+)
 
 __all__ = [
     "BroadcastCase",
@@ -14,6 +20,7 @@ __all__ = [
     "ConfirmationResult",
     "DynamicCase",
     "DynamicShapeGenerator",
+    "DynamicTraceReduction",
     "ExecutionResult",
     "FindingDeduplicator",
     "FindingFingerprint",
@@ -30,7 +37,9 @@ __all__ = [
     "confirm",
     "coverage_summary",
     "export_finding",
+    "minimize_dynamic_trace",
     "reduce_confirmed",
+    "reduce_dynamic_execution",
     "reduce_execution",
     "run_campaign",
     "write_campaign_report",
