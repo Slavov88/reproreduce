@@ -68,7 +68,7 @@ def run_campaign(
     mode: str = "forward",
     confirmation: ConfirmationPolicy | None = None,
     executor: ProgramExecutor | None = None,
-    case_timeout: float | None = 120.0,
+    case_timeout: float | None = None,
     checkpoint: str | Path | None = None,
 ) -> tuple[HuntStats, FindingDeduplicator]:
     if cases < 0:

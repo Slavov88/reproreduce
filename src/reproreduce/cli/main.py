@@ -25,7 +25,12 @@ def build_parser() -> argparse.ArgumentParser:
     hunt_parser.add_argument("--cases", type=int, default=100)
     hunt_parser.add_argument("--seed", type=int, default=0)
     hunt_parser.add_argument("--confirm-runs", type=int, default=5)
-    hunt_parser.add_argument("--case-timeout", type=float, default=120.0)
+    hunt_parser.add_argument(
+        "--case-timeout",
+        type=float,
+        default=0.0,
+        help="per-case budget in seconds; 0 disables the budget",
+    )
     hunt_parser.add_argument("--output")
     return parser
 

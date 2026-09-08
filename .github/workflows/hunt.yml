@@ -55,6 +55,7 @@ jobs:
             --cases "$CASES" \
             --seed "$SEED" \
             --confirm-runs 5 \
+            --case-timeout 0 \
             --output .hunt/campaign.json
           python - <<'PY'
           import json, platform, sys
