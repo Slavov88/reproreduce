@@ -116,9 +116,18 @@ reproreduce hunt \
   --cases 250 \
   --seed 1500 \
   --output .hunt/broadcast-forward.json
+
+# One dynamic callable reused across four compatible shapes
+reproreduce hunt \
+  --backend inductor \
+  --family dynamic \
+  --mode gradient \
+  --cases 200 \
+  --seed 4000 \
+  --output .hunt/dynamic-gradient.json
 ```
 
-Supported initial operations include elementwise arithmetic, `sin`, `cos`, `exp`, `relu`, reductions, reshape, transpose, permute, slicing, and concatenation. Configurations cover 1D–3D edge-case shapes, `float32`, `bfloat16`, `float64`, gradients, and contiguous or derived non-contiguous layouts. `--family broadcast` selects structured scalar/tensor, row/matrix, column/matrix, singleton-middle, multi-axis, and chained broadcasting cases, and writes a coverage report beside `--output`. Use Inductor on Linux/WSL or CI; a local Windows missing-MSVC failure is not a correctness finding.
+Supported initial operations include elementwise arithmetic, `sin`, `cos`, `exp`, `relu`, reductions, reshape, transpose, permute, slicing, and concatenation. Configurations cover 1D–3D edge-case shapes, `float32`, `bfloat16`, `float64`, gradients, and contiguous or derived non-contiguous layouts. `--family broadcast` selects structured scalar/tensor, row/matrix, column/matrix, singleton-middle, multi-axis, and chained broadcasting cases. `--family dynamic` generates a four-shape trace and compiles one callable with `dynamic=True`; it records shape-level outcomes and secondary graph-count observations. Both families write a coverage report beside `--output`. Use Inductor on Linux/WSL or CI; a local Windows missing-MSVC failure is not a correctness finding.
 
 Search results are candidates only. Re-run findings, test stable and nightly PyTorch where practical, inspect semantics, and search upstream issues before calling one a new bug. The frontend does not file issues automatically.
 

@@ -2,41 +2,43 @@
 
 ## Current frontier
 
-**OBSERVED:** `feat/bug-hunter` includes a deterministic PyTorch tensor-program search frontend, explicit backend tracking, checkpointed experiment records, dtype-aware tolerances, discrepancy confirmation, ReproReduce minimization, standalone reproducer export, and structured broadcasting coverage.
+**OBSERVED:** `feat/bug-hunter` now supports deterministic generic, structured broadcasting, and dynamic-shape PyTorch Inductor campaigns. Dynamic cases compile one callable with `dynamic=True` and reuse it over a four-shape trace, with static per-shape controls, shape-level metadata, dynamic-aware reduction, and dynamic harness export.
 
 ## Confirmed results
 
-- **COMPUTATIONALLY VERIFIED:** the full test suite passed **78 tests** on WSL2 Ubuntu.
-- **COMPUTATIONALLY VERIFIED:** the targeted broadcasting campaign completed **500 deterministic cases**: 250 forward cases and 250 gradient cases.
-- **COMPUTATIONALLY VERIFIED:** all 500 cases executed eagerly and completed Inductor execution; no compile failures, runtime failures, infrastructure failures, or timeouts were recorded.
-- **COMPUTATIONALLY VERIFIED:** forward cases covered six broadcasting patterns, three dtypes, six post-operation cells, and contiguous, sliced, and transposed inputs. Gradient cases used the same structured dimensions.
-- **COMPUTATIONALLY VERIFIED:** the forward half produced 4 persistent discrepancies; the gradient half produced 17 persistent discrepancies. Every candidate reproduced in all five confirmation attempts.
-- **OBSERVED:** the 4 forward candidates were three bfloat16 rounding cases and one float32 reduction-order case. The 17 gradient candidates were all bfloat16 cases.
-- **COMPUTATIONALLY VERIFIED:** fresh-process float32/float64 controls passed for representative bfloat16 forward and gradient candidates; a float64 control also passed for the float32 reduction-order candidate.
-- **COMPUTATIONALLY VERIFIED:** representative forward and gradient candidates reduced from 17 LOC to 6 LOC, with failure preservation, and were exported with runnable harnesses under `.hunt/inductor-broadcast-v1/export-*`.
-- **INFERRED / FALSE POSITIVE:** the observed candidates are low-precision rounding or legal reduction-order effects, not semantic incorrectness. No new PyTorch defect is claimed.
+- **COMPUTATIONALLY VERIFIED:** the pre-change baseline passed **78 tests** at commit `520d1cf`; the final dynamic-shape implementation passed **87 tests**.
+- **COMPUTATIONALLY VERIFIED:** the dynamic-shape campaign completed **400 cases** and **1,600 shape executions**: 200 forward cases and 200 gradient cases.
+- **COMPUTATIONALLY VERIFIED:** all dynamic cases executed eagerly and completed Inductor execution with zero compile, runtime, infrastructure, or timeout failures.
+- **COMPUTATIONALLY VERIFIED:** forward produced 26 numerical discrepancies; gradient produced 8 numerical and 9 nonfinite comparisons. All were bfloat16.
+- **COMPUTATIONALLY VERIFIED:** all forward/gradient numerical discrepancies reproduced in five campaign confirmation attempts. The nine nonfinite cases were separately reproduced five times in a fresh process.
+- **COMPUTATIONALLY VERIFIED:** static controls matched every forward failing shape and every gradient numerical failing shape. Three nonfinite cases were dynamic-only at their first shape but remained bfloat16-only.
+- **COMPUTATIONALLY VERIFIED:** representative operation families and all three dynamic-only nonfinite representatives passed float32 and float64 dynamic and static controls.
+- **COMPUTATIONALLY VERIFIED:** representative forward and gradient cases were reduced to 6 LOC with minimized two-shape traces and exported dynamic harnesses.
+- **INFERRED / FALSE_POSITIVE:** no float32/float64 dynamic-only semantic discrepancy survived the validation funnel. No new PyTorch correctness defect is claimed.
 
-## Targeted campaign record
+## Dynamic campaign record
+
+See `reports/INDUCTOR_DYNAMIC_V1.md`.
 
 Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 3.1.0, NVIDIA GeForce RTX 3050 Laptop GPU. Inputs were CPU tensors; the registered Inductor backend was invoked. Case timeout was disabled.
 
-- Forward seeds: **1500–1749**.
-- Gradient seeds: **2500–2749**.
-- Confirmation policy: five repeated runs with fixed generated inputs.
-- Raw records: ignored `.hunt/inductor-broadcast-v1/`.
-- Coverage reports: `forward.coverage.md` and `gradient.coverage.md`.
+- Forward seeds: **3000–3199**.
+- Gradient seeds: **4000–4199**.
+- Four shape instances per case; zero-sized dimensions excluded.
+- Backend graph observations: 280 forward / 275 gradient graph compilations; 80 / 75 cases respectively observed more than one graph.
+- Raw records and validation artifacts: ignored `.hunt/inductor-dynamic-v1/`.
 
 ## Failed directions
 
-- **OBSERVED:** treating all reproducible bfloat16 discrepancies as compiler defects overcalls expected fusion/reassociation differences.
-- **OBSERVED:** per-case Inductor compilation makes broad campaigns slow; the forward campaign was completed in segments after the initial process exceeded the interactive execution budget.
+- **OBSERVED:** bfloat16 dynamic broadcasts, reductions, and gradient cases produce many reproducible low-precision or nonfinite comparisons, but static controls and higher-precision controls do not support a dynamic-shape defect claim.
+- **OBSERVED:** recompilation is common enough to be diagnostically useful, but it is not itself a correctness failure.
 
 ## Unresolved bottlenecks
 
-- Nightly PyTorch validation was not run because every candidate was eliminated by dtype controls and semantic review; no higher-precision semantic discrepancy remained.
-- The current grammar does not generate dynamic shapes, mutation, explicit aliasing, or view/write interactions.
-- Search throughput remains limited by per-case Inductor compilation.
+- Nightly PyTorch validation was not run because no float32/float64 dynamic-only discrepancy survived controls.
+- Guard/recompilation counts are secondary observations and rely on a compatibility wrapper around private backend lookup.
+- The v1 grammar excludes zero-sized dimensions, mutation, explicit aliasing, and view/write interactions.
 
 ## Next highest-value experiment
 
-Add a small mutation/view/aliasing pilot with float32 and float64 controls. Kill the direction if it produces only low-precision or expected layout-dependent numerical differences; retain it only if a stable higher-precision semantic discrepancy survives fresh-process validation.
+Do not start it in this milestone. The next separate frontier is aliasing + mutation + view/write interactions, with float32/float64 controls and the same eager/static/dynamic validation funnel.
