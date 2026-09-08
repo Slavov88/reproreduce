@@ -121,8 +121,12 @@ class Program:
             return f"torch.where({args[0]} > 0, {args[0]}, {args[1]})"
         if name in {"sin", "cos", "exp", "log", "relu"}:
             return f"torch.{name}({args[0]})"
-        if name in {"sum", "mean"}:
-            return f"{args[0]}.{name}()"
+        if name in {"sum", "mean", "amax"}:
+            if "dim" not in kwargs:
+                return f"{args[0]}.{name}()"
+            dim = kwargs["dim"]
+            keepdim = kwargs.get("keepdim", False)
+            return f"{args[0]}.{name}(dim={dim}, keepdim={keepdim!r})"
         if name == "reshape":
             shape = ", ".join(str(value) for value in kwargs["shape"])
             return f"{args[0]}.reshape({shape})"

@@ -1,5 +1,6 @@
 from .campaign import HuntStats, coverage_summary, run_campaign, write_campaign_report, write_coverage_summary
 from .config import TensorConfig, TensorConfigGenerator
+from .dynamic import DynamicCase, DynamicShapeGenerator
 from .confirm import ConfirmationPolicy, ConfirmationResult, FindingDeduplicator, FindingFingerprint, confirm
 from .execute import ExecutionResult, OutcomeClass, ProgramExecutor
 from .export import export_finding
@@ -11,6 +12,8 @@ __all__ = [
     "BroadcastCase",
     "ConfirmationPolicy",
     "ConfirmationResult",
+    "DynamicCase",
+    "DynamicShapeGenerator",
     "ExecutionResult",
     "FindingDeduplicator",
     "FindingFingerprint",

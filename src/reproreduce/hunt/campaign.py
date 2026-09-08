@@ -11,6 +11,7 @@ from typing import Any
 from .config import TensorConfigGenerator
 from .confirm import ConfirmationPolicy, FindingDeduplicator, FindingFingerprint, confirm
 from ..oracle import OracleResult
+from .dynamic import DynamicShapeGenerator
 from .execute import ExecutionResult, HuntTimeout, OutcomeClass, ProgramExecutor
 from .generator import StructuredBroadcastGenerator, TensorProgramGenerator
 
@@ -31,6 +32,9 @@ class HuntStats:
     timeouts: int = 0
     nondeterministic: int = 0
     unique_findings: int = 0
+    shape_executions: int = 0
+    compiled_graphs: int = 0
+    recompilations: int = 0
     classifications: Counter[str] = field(default_factory=Counter)
     cases: list[dict[str, Any]] = field(default_factory=list)
     experiment: dict[str, Any] = field(default_factory=dict)
@@ -56,6 +60,9 @@ class HuntStats:
             "timeouts": self.timeouts,
             "nondeterministic": self.nondeterministic,
             "unique_findings": self.unique_findings,
+            "shape_executions": self.shape_executions,
+            "compiled_graphs": self.compiled_graphs,
+            "recompilations": self.recompilations,
             "classifications": dict(self.classifications),
             "cases": self.cases,
             "experiment": self.experiment,
@@ -79,8 +86,8 @@ def run_campaign(
         raise ValueError("cases must be non-negative")
     if mode not in {"forward", "gradient"}:
         raise ValueError("mode must be 'forward' or 'gradient'")
-    if family not in {"random", "broadcast"}:
-        raise ValueError("family must be 'random' or 'broadcast'")
+    if family not in {"random", "broadcast", "dynamic"}:
+        raise ValueError("family must be 'random', 'broadcast', or 'dynamic'")
     selected_executor = executor or ProgramExecutor(backend=backend)
     stats = HuntStats(
         experiment={
@@ -91,24 +98,41 @@ def run_campaign(
             "cases_requested": cases,
             "confirmation_attempts": (confirmation.attempts if confirmation else 5),
             "case_timeout": case_timeout,
+            "dynamic_compile": family == "dynamic",
+            "shape_trace_length": 4 if family == "dynamic" else None,
         }
     )
     deduplicator = FindingDeduplicator()
 
     for case_seed in range(seed, seed + cases):
+        dynamic_case = None
         if family == "broadcast":
             broadcast_case = StructuredBroadcastGenerator(case_seed, mode=mode).generate()
             program = broadcast_case.program
             configs = broadcast_case.configs
+            config_trace = None
+        elif family == "dynamic":
+            dynamic_case = DynamicShapeGenerator(case_seed, mode=mode).generate()
+            program = dynamic_case.program
+            config_trace = dynamic_case.config_trace
+            configs = config_trace[0]
         else:
             config = TensorConfigGenerator(case_seed).generate()
             if mode == "gradient" and not config.requires_grad:
                 config = replace(config, requires_grad=True)
             program = TensorProgramGenerator(case_seed).generate(config)
             configs = (config, config)
+            config_trace = None
         stats.cases_generated += 1
 
         def invoke_case():
+            if dynamic_case is not None:
+                return selected_executor.run_dynamic(
+                    program,
+                    config_trace,
+                    mode=mode,
+                    input_seed=case_seed,
+                )
             return selected_executor.run(program, configs, mode=mode, input_seed=case_seed)
 
         def run_case():
@@ -122,6 +146,10 @@ def run_campaign(
 
         result = run_case()
         stats.classifications[result.classification.value] += 1
+        stats.shape_executions += result.shape_executions
+        stats.compiled_graphs += result.compiled_graphs
+        if result.recompilation_observed:
+            stats.recompilations += 1
 
         if result.classification == OutcomeClass.EAGER_ERROR:
             stats.eager_invalid += 1
@@ -180,6 +208,20 @@ def run_campaign(
                 "program_id": program.identity,
                 "program": program.to_dict(),
                 "configs": [config.to_dict() for config in configs],
+                "config_trace": (
+                    [
+                        [config.to_dict() for config in step]
+                        for step in config_trace
+                    ]
+                    if config_trace is not None
+                    else None
+                ),
+                "shape_trace": result.shape_trace if result.dynamic else None,
+                "shape_index": result.shape_index,
+                "shape_executions": result.shape_executions,
+                "compiled_graphs": result.compiled_graphs,
+                "recompilation_observed": result.recompilation_observed,
+                "shape_results": result.shape_results,
                 "input_seed": case_seed,
                 "family": family,
                 "coverage": program.metadata_dict(),
@@ -250,7 +292,17 @@ def _run_with_timeout(
 
 
 def coverage_summary(cases: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
-    dimensions = ("broadcast_pattern", "dtype", "layout", "post_op", "mode")
+    dimensions = (
+        "broadcast_pattern",
+        "symbolic_pattern",
+        "operation_family",
+        "dtype",
+        "layout",
+        "post_op",
+        "mode",
+        "dynamic_compile",
+        "varying_dim_count",
+    )
     summary: dict[str, dict[str, int]] = {dimension: {} for dimension in dimensions}
     for case in cases:
         metadata = case.get("coverage", {})
@@ -260,6 +312,10 @@ def coverage_summary(cases: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
                 values = metadata.get("input_layouts", [])
                 for item in values:
                     summary[dimension][item] = summary[dimension].get(item, 0) + 1
+            elif dimension == "varying_dim_count":
+                key = str(len(metadata.get("varying_dims", [])))
+                if metadata.get("varying_dims") is not None:
+                    summary[dimension][key] = summary[dimension].get(key, 0) + 1
             elif value is not None:
                 key = str(value)
                 summary[dimension][key] = summary[dimension].get(key, 0) + 1
