@@ -100,6 +100,33 @@ class DynamicShapeTests(unittest.TestCase):
                 )
                 self.assertEqual(result.classification, OutcomeClass.PASS)
 
+    def test_dynamic_trace_minimization_preserves_a_discrepancy(self):
+        from reproreduce.hunt import minimize_dynamic_trace
+
+        def compiler(function):
+            return lambda *inputs: function(*inputs) + 1
+
+        case = DynamicShapeGenerator(3000).generate()
+        executor = ProgramExecutor(backend="test", compiler=compiler)
+        baseline = executor.run_dynamic(case.program, case.config_trace, input_seed=3000)
+        self.assertEqual(baseline.classification, OutcomeClass.FORWARD_MISMATCH)
+        reduced = minimize_dynamic_trace(
+            case.program,
+            case.config_trace,
+            executor,
+            mode="forward",
+            input_seed=3000,
+        )
+        self.assertEqual(reduced.reduced_length, 2)
+        self.assertEqual(reduced.original_length, 4)
+        checked = executor.run_dynamic(
+            case.program,
+            reduced.config_trace,
+            mode="forward",
+            trace_seeds=tuple(3000 + index * 1009 for index in reduced.selected_indices),
+        )
+        self.assertEqual(checked.classification, OutcomeClass.FORWARD_MISMATCH)
+
     def test_campaign_checkpoint_and_coverage_include_dynamic_axes(self):
         with tempfile.TemporaryDirectory() as directory:
             checkpoint = Path(directory) / "dynamic.json"

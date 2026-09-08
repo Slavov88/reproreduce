@@ -185,7 +185,11 @@ def run_campaign(
 
         confirmation_result = None
         finding_id = None
-        mismatch_classes = {OutcomeClass.FORWARD_MISMATCH, OutcomeClass.GRADIENT_MISMATCH}
+        mismatch_classes = {
+            OutcomeClass.FORWARD_MISMATCH,
+            OutcomeClass.GRADIENT_MISMATCH,
+            OutcomeClass.NONFINITE_COMPARISON,
+        }
         if result.classification in mismatch_classes:
             policy = confirmation or ConfirmationPolicy(attempts=5, min_successes=5)
             confirmation_result = confirm(

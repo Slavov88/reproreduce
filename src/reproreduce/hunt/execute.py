@@ -149,6 +149,7 @@ class ProgramExecutor:
         *,
         mode: str = "forward",
         input_seed: int | None = None,
+        trace_seeds: Sequence[int | None] | None = None,
     ) -> ExecutionResult:
         """Compile one callable dynamically and reuse it across a shape trace."""
         if mode not in {"forward", "gradient"}:
@@ -156,6 +157,8 @@ class ProgramExecutor:
         trace = tuple(tuple(configs) for configs in config_trace)
         if len(trace) < 2:
             raise ValueError("dynamic execution requires at least two shape instances")
+        if trace_seeds is not None and len(trace_seeds) != len(trace):
+            raise ValueError("trace_seeds must match the shape trace length")
         shape_trace = tuple(tuple(config.shape for config in configs) for configs in trace)
         backend_called = {"value": False}
         compiled_graphs = {"value": 0}
@@ -201,7 +204,11 @@ class ProgramExecutor:
 
             atol, rtol = self._oracle_tolerances(trace[0])
             for index, configs in enumerate(trace):
-                step_seed = self._trace_seed(input_seed, index)
+                step_seed = (
+                    trace_seeds[index]
+                    if trace_seeds is not None
+                    else self._trace_seed(input_seed, index)
+                )
                 eager_inputs = self._materialize_inputs(configs, step_seed)
                 compiled_inputs = self._materialize_inputs(configs, step_seed)
                 if mode == "forward":

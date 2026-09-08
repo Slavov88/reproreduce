@@ -4,7 +4,7 @@ import json
 import platform
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from ..core.result import ReductionResult
 from .config import TensorConfig
@@ -18,6 +18,7 @@ def export_finding(
     finding: dict[str, Any] | None = None,
     program: Program | None = None,
     configs: tuple[TensorConfig, ...] | None = None,
+    config_trace: Sequence[tuple[TensorConfig, ...]] | None = None,
     mode: str = "forward",
     backend: str = "inductor",
     input_seed: int = 0,
@@ -35,14 +36,24 @@ def export_finding(
             )
             for spec in program.inputs
         )
-        repro_source = _with_harness(
-            repro_source,
-            program,
-            selected_configs,
-            mode=mode,
-            backend=backend,
-            input_seed=input_seed,
-        )
+        if config_trace is not None:
+            repro_source = _with_dynamic_harness(
+                repro_source,
+                program,
+                config_trace,
+                mode=mode,
+                backend=backend,
+                input_seed=input_seed,
+            )
+        else:
+            repro_source = _with_harness(
+                repro_source,
+                program,
+                selected_configs,
+                mode=mode,
+                backend=backend,
+                input_seed=input_seed,
+            )
     (destination / "repro.py").write_text(repro_source, encoding="utf-8")
 
     metrics = result.metrics
@@ -132,6 +143,55 @@ def _with_harness(
         lines.append("    for eager_grad, compiled_grad in zip(eager_grads, compiled_grads):")
         lines.append("        if eager_grad is not None and compiled_grad is not None:")
         lines.append("            print('gradient max abs difference:', (eager_grad.to(torch.float64) - compiled_grad.to(torch.float64)).abs().max().item())")
+    return "\n".join(lines) + "\n"
+
+
+def _with_dynamic_harness(
+    source: str,
+    program: Program,
+    config_trace: Sequence[tuple[TensorConfig, ...]],
+    *,
+    mode: str,
+    backend: str,
+    input_seed: int,
+) -> str:
+    lines = [source.rstrip(), "", "", "if __name__ == '__main__':", "    import torch", ""]
+    lines.append(f"    compiled_program = torch.compile(generated_program, backend={backend!r}, dynamic=True)")
+    for index, configs in enumerate(config_trace):
+        seed = input_seed + index * 1009
+        lines.append(f"    # shape index {index}: {[config.shape for config in configs]!r}")
+        eager_names = []
+        compiled_names = []
+        for prefix in ("eager", "compiled"):
+            names = []
+            for position, (spec, config) in enumerate(zip(program.inputs, configs)):
+                name = f"{prefix}_{index}_{position}"
+                names.append(name)
+                lines.extend(line[4:] for line in _input_lines(name, config, seed + position))
+            if prefix == "eager":
+                eager_names = names
+            else:
+                compiled_names = names
+        lines.append(f"    eager_result_{index} = generated_program({', '.join(eager_names)})")
+        lines.append(f"    compiled_result_{index} = compiled_program({', '.join(compiled_names)})")
+        lines.append(f"    print('shape {index} eager:', eager_result_{index})")
+        lines.append(f"    print('shape {index} compiled:', compiled_result_{index})")
+        lines.append(
+            f"    if torch.is_tensor(eager_result_{index}) and torch.is_tensor(compiled_result_{index}):"
+        )
+        lines.append(
+            f"        print('shape {index} max abs difference:', "
+            f"(eager_result_{index}.detach().to(torch.float64) - compiled_result_{index}.detach().to(torch.float64)).abs().max().item())"
+        )
+        if mode == "gradient":
+            lines.append(
+                f"    print('shape {index} eager gradients:', "
+                f"torch.autograd.grad(eager_result_{index}.sum(), ({', '.join(eager_names)}), allow_unused=True))"
+            )
+            lines.append(
+                f"    print('shape {index} compiled gradients:', "
+                f"torch.autograd.grad(compiled_result_{index}.sum(), ({', '.join(compiled_names)}), allow_unused=True))"
+            )
     return "\n".join(lines) + "\n"
 
 
