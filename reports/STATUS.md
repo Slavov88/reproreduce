@@ -2,42 +2,41 @@
 
 ## Current frontier
 
-**OBSERVED:** `feat/bug-hunter` now includes a deterministic PyTorch tensor-program search frontend, explicit Inductor preflight, checkpointed experiment records, dtype-aware tolerances, discrepancy confirmation, ReproReduce minimization, and standalone reproducer export.
+**OBSERVED:** `feat/bug-hunter` includes a deterministic PyTorch tensor-program search frontend, explicit backend tracking, checkpointed experiment records, dtype-aware tolerances, discrepancy confirmation, ReproReduce minimization, standalone reproducer export, and structured broadcasting coverage.
 
 ## Confirmed results
 
-- **COMPUTATIONALLY VERIFIED:** the final Linux/WSL Inductor preflight invoked the registered Inductor backend and produced matching output.
-- **COMPUTATIONALLY VERIFIED:** the final full suite passed **72 tests**.
-- **COMPUTATIONALLY VERIFIED:** a total of **1,000 deterministic cases** completed: 500 forward cases and 500 gradient cases.
-- **COMPUTATIONALLY VERIFIED:** all 1,000 cases executed eagerly; 999 completed compiled execution; one cache-related infrastructure failure was isolated and excluded from correctness counts.
-- **COMPUTATIONALLY VERIFIED:** the campaign produced two persistent forward discrepancies and one persistent gradient discrepancy under the initial dtype-aware oracle. All three were automatically reduced and exported.
-- **MANUALLY REPRODUCED:** reduced forward discrepancies were reproduced three times on stable PyTorch 2.5.1+cu124.
-- **MANUALLY REPRODUCED:** the reduced gradient discrepancy was reproduced three times on stable PyTorch 2.5.1+cu124.
-- **INFERRED / FALSE POSITIVE:** all three discrepancies are explained by low-precision bfloat16 rounding and compiler fusion/reassociation. Float32 and float64 variants match; higher-precision reference checks show the compiled forward result can match the single-rounding reference more closely than eager execution.
-- **COMPUTATIONALLY VERIFIED:** the reduced gradient expression passes float64 `gradcheck`.
-- **OBSERVED:** no new PyTorch defect is claimed.
+- **COMPUTATIONALLY VERIFIED:** the full test suite passed **78 tests** on WSL2 Ubuntu.
+- **COMPUTATIONALLY VERIFIED:** the targeted broadcasting campaign completed **500 deterministic cases**: 250 forward cases and 250 gradient cases.
+- **COMPUTATIONALLY VERIFIED:** all 500 cases executed eagerly and completed Inductor execution; no compile failures, runtime failures, infrastructure failures, or timeouts were recorded.
+- **COMPUTATIONALLY VERIFIED:** forward cases covered six broadcasting patterns, three dtypes, six post-operation cells, and contiguous, sliced, and transposed inputs. Gradient cases used the same structured dimensions.
+- **COMPUTATIONALLY VERIFIED:** the forward half produced 4 persistent discrepancies; the gradient half produced 17 persistent discrepancies. Every candidate reproduced in all five confirmation attempts.
+- **OBSERVED:** the 4 forward candidates were three bfloat16 rounding cases and one float32 reduction-order case. The 17 gradient candidates were all bfloat16 cases.
+- **COMPUTATIONALLY VERIFIED:** fresh-process float32/float64 controls passed for representative bfloat16 forward and gradient candidates; a float64 control also passed for the float32 reduction-order candidate.
+- **COMPUTATIONALLY VERIFIED:** representative forward and gradient candidates reduced from 17 LOC to 6 LOC, with failure preservation, and were exported with runnable harnesses under `.hunt/inductor-broadcast-v1/export-*`.
+- **INFERRED / FALSE POSITIVE:** the observed candidates are low-precision rounding or legal reduction-order effects, not semantic incorrectness. No new PyTorch defect is claimed.
 
-## Main campaign record
+## Targeted campaign record
 
-Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 3.1.0, NVIDIA GeForce RTX 3050 Laptop GPU. Inputs were CPU tensors; Inductor and Triton were available and the C++ toolchain was installed.
+Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 3.1.0, NVIDIA GeForce RTX 3050 Laptop GPU. Inputs were CPU tensors; the registered Inductor backend was invoked. Case timeout was disabled.
 
-- Forward seeds: 1000–1499.
-- Gradient seeds: 2000–2499.
+- Forward seeds: **1500–1749**.
+- Gradient seeds: **2500–2749**.
 - Confirmation policy: five repeated runs with fixed generated inputs.
-- Case timeout: disabled.
-- Raw records: ignored `.hunt/inductor-main/`.
+- Raw records: ignored `.hunt/inductor-broadcast-v1/`.
+- Coverage reports: `forward.coverage.md` and `gradient.coverage.md`.
 
 ## Failed directions
 
-- **OBSERVED:** the first gradient attempt used a temporary 120-second case budget and was interrupted after 166 cases. Its timeout-contaminated case was rerun without a budget and passed; the final 500-case gradient record uses the rerun.
-- **OBSERVED:** an initial bfloat16 gradient smoke discrepancy was eliminated by dtype-aware tolerances.
+- **OBSERVED:** treating all reproducible bfloat16 discrepancies as compiler defects overcalls expected fusion/reassociation differences.
+- **OBSERVED:** per-case Inductor compilation makes broad campaigns slow; the forward campaign was completed in segments after the initial process exceeded the interactive execution budget.
 
 ## Unresolved bottlenecks
 
-- Nightly PyTorch was not installed because every persistent candidate was eliminated as a low-precision numerical false positive before nightly validation was necessary.
-- The current grammar does not generate broadcasting, dynamic shapes, mutation, or explicit aliasing patterns.
-- Search throughput is limited by per-case Inductor compilation; the 500-case forward campaign took approximately 74 minutes.
+- Nightly PyTorch validation was not run because every candidate was eliminated by dtype controls and semantic review; no higher-precision semantic discrepancy remained.
+- The current grammar does not generate dynamic shapes, mutation, explicit aliasing, or view/write interactions.
+- Search throughput remains limited by per-case Inductor compilation.
 
 ## Next highest-value experiment
 
-Add only structured broadcasting cases to the existing grammar, retain float32/float64 controls alongside bfloat16, and run a smaller targeted Inductor campaign. Broadcasting is the clearest measured coverage gap before adding mutation or dynamic-shape complexity.
+Add a small mutation/view/aliasing pilot with float32 and float64 controls. Kill the direction if it produces only low-precision or expected layout-dependent numerical differences; retain it only if a stable higher-precision semantic discrepancy survives fresh-process validation.

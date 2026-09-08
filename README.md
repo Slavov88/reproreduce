@@ -107,9 +107,18 @@ reproreduce hunt \
   --cases 1000 \
   --seed 42 \
   --output .hunt/campaign.json
+
+# Structured broadcasting × layout coverage (Linux/WSL Inductor)
+reproreduce hunt \
+  --backend inductor \
+  --family broadcast \
+  --mode forward \
+  --cases 250 \
+  --seed 1500 \
+  --output .hunt/broadcast-forward.json
 ```
 
-Supported initial operations include elementwise arithmetic, `sin`, `cos`, `exp`, `relu`, reductions, reshape, transpose, permute, slicing, and concatenation. Configurations cover 1D–3D edge-case shapes, `float32`, `bfloat16`, `float64`, gradients, and contiguous or derived non-contiguous layouts. Use Inductor on Linux/WSL or CI; a local Windows missing-MSVC failure is not a correctness finding.
+Supported initial operations include elementwise arithmetic, `sin`, `cos`, `exp`, `relu`, reductions, reshape, transpose, permute, slicing, and concatenation. Configurations cover 1D–3D edge-case shapes, `float32`, `bfloat16`, `float64`, gradients, and contiguous or derived non-contiguous layouts. `--family broadcast` selects structured scalar/tensor, row/matrix, column/matrix, singleton-middle, multi-axis, and chained broadcasting cases, and writes a coverage report beside `--output`. Use Inductor on Linux/WSL or CI; a local Windows missing-MSVC failure is not a correctness finding.
 
 Search results are candidates only. Re-run findings, test stable and nightly PyTorch where practical, inspect semantics, and search upstream issues before calling one a new bug. The frontend does not file issues automatically.
 
