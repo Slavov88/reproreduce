@@ -265,6 +265,19 @@ def run_one(
     candidate_runs = int(result.metrics.get("candidate_runs", 0))
     cache_hits = int(result.metrics.get("cache_hits", 0))
     candidate_evaluations = candidate_runs + cache_hits
+    profile_keys = {
+        "candidate_call_seconds",
+        "subprocess_source_write_seconds",
+        "subprocess_startup_seconds",
+        "subprocess_wait_seconds",
+        "oracle_seconds",
+        "cache_lookup_seconds",
+        "cache_write_seconds",
+        "reducer_bookkeeping_seconds",
+        "candidate_requests",
+        "unique_candidate_sources",
+        "duplicate_candidate_sources",
+    }
     record.update(
         {
             "status": "COMPUTATIONALLY VERIFIED" if fingerprint_preserved and standalone_success else "OBSERVED",
@@ -276,6 +289,9 @@ def run_one(
             "candidate_runs": candidate_runs,
             "candidate_evaluations": candidate_evaluations,
             "cache_hits": cache_hits,
+            "unique_candidate_sources": result.metrics.get("unique_candidate_sources", candidate_runs),
+            "duplicate_candidate_sources": result.metrics.get("duplicate_candidate_sources", 0),
+            "profiling": {key: result.metrics.get(key, 0.0) for key in sorted(profile_keys)},
             "cache_hit_ratio": cache_hits / candidate_evaluations if candidate_evaluations else 0.0,
             "wall_time_seconds": wall_time,
             "candidate_execution_seconds": result.metrics.get("total_candidate_execution_time", 0.0),
