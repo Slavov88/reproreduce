@@ -52,7 +52,8 @@ class ReductionResult:
             "Run with:\n\n```bash\npython repro.py\n```\n\n"
             f"Original LOC: {self.original_loc}\n\n"
             f"Reduced LOC: {self.reduced_loc}\n\n"
-            "The reduced script preserved the configured failure oracle.\n",
+            "The reduced script preserved the configured failure oracle. "
+            "See `reduction.json` for run status, commands, and captured evidence.\n",
             encoding="utf-8",
         )
         (destination / "environment.json").write_text(
@@ -70,6 +71,8 @@ class ReductionResult:
                     "reduced_loc": self.reduced_loc,
                     "history": self.history,
                     "metrics": self.metrics,
+                    "original_run": _run_metadata(self.original_run),
+                    "reduced_run": _run_metadata(self.reduced_run),
                 },
                 indent=2,
             )
@@ -77,3 +80,13 @@ class ReductionResult:
             encoding="utf-8",
         )
         return destination
+
+
+def _run_metadata(run: RunResult) -> dict[str, object]:
+    return {
+        "command": list(run.command),
+        "returncode": run.returncode,
+        "timed_out": run.timed_out,
+        "duration_seconds": run.duration_seconds,
+        "stderr_tail": run.stderr[-4000:],
+    }

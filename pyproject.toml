@@ -4,13 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reproreduce"
-version = "0.1.0.dev0"
-description = "Framework-aware delta debugging for failing Python and PyTorch programs."
+version = "0.1.0"
+description = "Failure-preserving reduction and compiler reproducer tooling for Python and PyTorch."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "ReproReduce contributors" }]
+keywords = ["delta-debugging", "reduction", "reproducer", "pytorch", "compiler"]
 dependencies = []
+
+[project.urls]
+Repository = "https://github.com/Slavov88/reproreduce"
+Issues = "https://github.com/Slavov88/reproreduce/issues"
 
 [project.optional-dependencies]
 test = ["torch>=2.0"]

@@ -1,0 +1,82 @@
+name: torch compile hunt
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend:
+        description: "torch.compile backend"
+        required: true
+        default: inductor
+        type: choice
+        options:
+          - inductor
+          - aot_eager
+      mode:
+        description: "comparison mode"
+        required: true
+        default: forward
+        type: choice
+        options:
+          - forward
+          - gradient
+      cases:
+        description: "number of generated cases"
+        required: true
+        default: "1000"
+        type: string
+      seed:
+        description: "starting deterministic seed"
+        required: true
+        default: "42"
+        type: string
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[test]"
+      - name: Run campaign
+        env:
+          BACKEND: ${{ inputs.backend }}
+          MODE: ${{ inputs.mode }}
+          CASES: ${{ inputs.cases }}
+          SEED: ${{ inputs.seed }}
+        run: |
+          mkdir -p .hunt
+          reproreduce hunt \
+            --backend "$BACKEND" \
+            --mode "$MODE" \
+            --cases "$CASES" \
+            --seed "$SEED" \
+            --confirm-runs 5 \
+            --case-timeout 0 \
+            --output .hunt/campaign.json
+          python - <<'PY'
+          import json, platform, sys
+          from pathlib import Path
+          metadata = {
+              "python": sys.version,
+              "platform": platform.platform(),
+              "backend": "${{ inputs.backend }}",
+              "mode": "${{ inputs.mode }}",
+              "cases": int("${{ inputs.cases }}"),
+              "seed": int("${{ inputs.seed }}"),
+          }
+          try:
+              import torch
+              metadata["pytorch"] = torch.__version__
+          except ImportError:
+              pass
+          Path(".hunt/environment.json").write_text(json.dumps(metadata, indent=2) + "\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: torch-compile-hunt-${{ github.run_id }}
+          path: .hunt/
+          if-no-files-found: error
