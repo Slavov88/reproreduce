@@ -6,6 +6,23 @@ ReproReduce is a failure-preserving reducer for self-contained Python programs a
 
 Compiler failures are often buried under irrelevant setup. ReproReduce turns a large failing script into a smaller artifact that is easier to debug or attach to an issue.
 
+**ReproReduce has been computationally verified on failing programs containing hundreds of lines, including a 273 → 4 nonblank-LOC Python reduction and a 152 → 28 nonblank-LOC historical PyTorch Inductor reduction, with the target failure preserved in standalone reproducers.**
+
+## Verified reductions
+
+| Case | Type | Original | Reduced | Reduction | Preserved |
+|---|---|---:|---:|---:|---|
+| Large Python exception | Synthetic | 273 nonblank LOC | 4 LOC | 98.5% | Yes |
+| Historical PyTorch Inductor bug | Historical real bug | 152 nonblank LOC | 28 LOC | 81.6% | Yes |
+| Nested Python | Synthetic | 200 nonblank LOC | 55 LOC | 72.5% | Yes |
+| Generated PyTorch program | Generated realistic | 331 nonblank LOC | 4 LOC | 98.8% | Yes |
+
+> **Historical Inductor result:** the 152 → 28 nonblank-LOC reduction preserves the stable Inductor `AssertionError` at `_call_user_compiler` containing `n=copy_`. Eager execution succeeds, the stable Inductor path fails, and the exported standalone reproducer reproduces the failure. This corresponds to [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952); the latest nightly tested by this project fixes it. This is a historical reduction, not a claim that ReproReduce discovered the issue or that it is currently unfixed.
+
+Large reductions currently take minutes rather than seconds. Compiler-backed cases can be substantially slower because candidate evaluation invokes compiler work; performance optimization is an active development area.
+
+See the [full large-reduction report](reports/LARGE_REDUCTION_BENCHMARKS_V1.md) for environments, costs, fingerprint details, and limitations.
+
 ## Install
 
 Core reduction has no runtime dependencies:
@@ -57,10 +74,6 @@ python .hunt/inductor-index-fill-reduced/repro.py
 ```
 
 In the verified PyTorch 2.5.1+cu124 environment, the 26-line fixture reduced to 13 nonblank lines while preserving the `n=copy_` assertion fingerprint. Eager execution succeeds; the compiled Inductor path fails. The issue is known upstream as [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952) and passes on the latest nightly tested by this project, so this example does not claim a current unfixed bug.
-
-## Large-input benchmark evidence
-
-**COMPUTATIONALLY VERIFIED:** in the v1 large-reduction benchmark suite, ReproReduce reduced a 273-nonblank-line synthetic exception program to 4 lines, a 152-line historical Inductor wrapper to 28 lines, a 200-line nested Python program to 55 lines, and a 331-line generated PyTorch exception program to 4 lines. Every completed reduction preserved its configured failure and its exported `repro.py` reproduced the failure in a fresh subprocess. These are deterministic benchmark fixtures, not a claim of arbitrary-project or global-minimal reduction; the nested case and the expensive Inductor runs expose current limitations. See [`reports/LARGE_REDUCTION_BENCHMARKS_V1.md`](reports/LARGE_REDUCTION_BENCHMARKS_V1.md) and [`reports/large_benchmarks_v1.json`](reports/large_benchmarks_v1.json).
 
 ## What ReproReduce validates
 
