@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## 0.1.0
 
 ReproReduce is prepared as an installable v0.1 developer tool.
 
