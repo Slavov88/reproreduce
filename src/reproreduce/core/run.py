@@ -18,6 +18,9 @@ class RunResult:
     stderr: str
     duration_seconds: float
     timed_out: bool = False
+    source_write_seconds: float = 0.0
+    process_startup_seconds: float = 0.0
+    process_wait_seconds: float = 0.0
 
     @property
     def succeeded(self) -> bool:
@@ -41,14 +44,20 @@ def run_python(
 
     candidate_path: Path | None = None
     started = time.perf_counter()
+    source_write_seconds = 0.0
+    process_startup_seconds = 0.0
+    process_wait_seconds = 0.0
     try:
+        write_started = time.perf_counter()
         with tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8", suffix=".py", prefix=".reproreduce-", dir=cwd, delete=False
         ) as handle:
             handle.write(source)
             candidate_path = Path(handle.name)
+        source_write_seconds = time.perf_counter() - write_started
 
         command = (executable, "-u", str(candidate_path))
+        startup_started = time.perf_counter()
         process = subprocess.Popen(
             command,
             cwd=cwd,
@@ -59,6 +68,8 @@ def run_python(
             encoding="utf-8",
             errors="replace",
         )
+        process_startup_seconds = time.perf_counter() - startup_started
+        wait_started = time.perf_counter()
         try:
             stdout, stderr = process.communicate(timeout=timeout)
             timed_out = False
@@ -68,6 +79,7 @@ def run_python(
             timeout_message = f"\nReproReduce timeout after {timeout:g}s.\n"
             stderr = (stderr or "") + timeout_message
             timed_out = True
+        process_wait_seconds = time.perf_counter() - wait_started
         return RunResult(
             command=command,
             returncode=process.returncode,
@@ -75,6 +87,9 @@ def run_python(
             stderr=stderr or "",
             duration_seconds=time.perf_counter() - started,
             timed_out=timed_out,
+            source_write_seconds=source_write_seconds,
+            process_startup_seconds=process_startup_seconds,
+            process_wait_seconds=process_wait_seconds,
         )
     finally:
         if candidate_path is not None:

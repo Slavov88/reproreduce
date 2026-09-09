@@ -26,6 +26,10 @@ class ReductionMetricsTests(unittest.TestCase):
         self.assertGreaterEqual(result.metrics["total_reduction_wall_time"], 0.0)
         self.assertEqual(result.reduced_run.returncode, result.original_run.returncode)
         self.assertIn("Candidate runs", result.summary())
+        self.assertGreaterEqual(result.metrics["candidate_requests"], result.metrics["candidate_runs"])
+        self.assertGreaterEqual(result.metrics["candidate_call_seconds"], 0.0)
+        self.assertGreaterEqual(result.metrics["subprocess_startup_seconds"], 0.0)
+        self.assertGreaterEqual(result.metrics["reducer_bookkeeping_seconds"], 0.0)
 
     def test_cache_hits_are_counted(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -49,6 +53,7 @@ class ReductionMetricsTests(unittest.TestCase):
         self.assertEqual(first[0].stderr, second[0].stderr)
         self.assertEqual(session._candidate_runs, 1)
         self.assertEqual(session._cache_hits, 1)
+        self.assertEqual(session._memory_cache_hits, 1)
         self.assertEqual(session._cache_misses, 1)
 
 

@@ -1,0 +1,578 @@
+{
+  "benchmarks": [
+    {
+      "classification": "SYNTHETIC",
+      "compiler_failure": false,
+      "description": "Large deterministic Python program with a buried exception.",
+      "filename": "large_exception.py",
+      "message": "REPROREDUCE_LARGE_TARGET",
+      "name": "large_exception",
+      "oracle_type": "RuntimeError"
+    },
+    {
+      "classification": "SYNTHETIC",
+      "compiler_failure": false,
+      "description": "Nested function, branch, loop, and exception-handler stress test.",
+      "filename": "nested_python.py",
+      "message": "REPROREDUCE_NESTED_TARGET",
+      "name": "nested_python",
+      "oracle_type": "RuntimeError"
+    }
+  ],
+  "command": "python -m reproreduce.bench",
+  "commit": "52af4a953b4d316d0115f05aff8bca1d206c61c0",
+  "determinism": {
+    "large_exception": {
+      "candidate_runs": [
+        167,
+        167,
+        167
+      ],
+      "exact_candidate_count_match": true,
+      "exact_reduced_source_match": true,
+      "fingerprint_preserved": [
+        true,
+        true,
+        true
+      ],
+      "reduced_nonblank_loc": [
+        4,
+        4,
+        4
+      ],
+      "reduced_source_sha256": [
+        "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e"
+      ],
+      "repeats": 3
+    },
+    "nested_python": {
+      "candidate_runs": [
+        212,
+        212,
+        212
+      ],
+      "exact_candidate_count_match": true,
+      "exact_reduced_source_match": true,
+      "fingerprint_preserved": [
+        true,
+        true,
+        true
+      ],
+      "reduced_nonblank_loc": [
+        55,
+        55,
+        55
+      ],
+      "reduced_source_sha256": [
+        "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c"
+      ],
+      "repeats": 3
+    }
+  },
+  "environment": {
+    "cuda_available": true,
+    "executable": "C:\\Program Files\\Python310\\python.exe",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "torch": "2.5.1+cu121"
+  },
+  "records": [
+    {
+      "accepted_transformations": 28,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.10215053763440861,
+      "cache_hits": 19,
+      "candidate_evaluations": 186,
+      "candidate_execution_seconds": 168.48896049999166,
+      "candidate_runs": 167,
+      "classification": "SYNTHETIC",
+      "description": "Large deterministic Python program with a buried exception.",
+      "duplicate_candidate_sources": 13,
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": null,
+      "median_candidate_execution_seconds": 0.9984831999754533,
+      "name": "large_exception",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 273,
+      "original_physical_loc": 308,
+      "profiling": {
+        "cache_lookup_seconds": 0.05905670009087771,
+        "cache_write_seconds": 0.9559749002801254,
+        "candidate_call_seconds": 168.7887178999954,
+        "candidate_requests": 186,
+        "duplicate_candidate_sources": 13,
+        "oracle_seconds": 0.024541199789382517,
+        "reducer_bookkeeping_seconds": 1.0513262998429127,
+        "subprocess_source_write_seconds": 0.17011790029937401,
+        "subprocess_startup_seconds": 1.2564510004012845,
+        "subprocess_wait_seconds": 167.05982670007506,
+        "unique_candidate_sources": 167
+      },
+      "reduced_nonblank_loc": 4,
+      "reduced_physical_loc": 4,
+      "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "reduction_fraction": 0.9853479853479854,
+      "reduction_percent": 98.53479853479854,
+      "rejected_transformations": 156,
+      "repeat": 1,
+      "source": "benchmarks/large_reduction_v1/large_exception.py",
+      "source_sha256": "79f6fef6c79691e96853940c731db5b28480023ef10f5456ef868901b001f492",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\large_exception-repeat-1\\export\\repro.py\", line 4, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\large_exception-repeat-1\\export\\repro.py\", line 2, in main\n    raise RuntimeError('REPROREDUCE_LARGE_TARGET')\nRuntimeError: REPROREDUCE_LARGE_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "unique_candidate_sources": 167,
+      "wall_time_seconds": 170.8825465000118
+    },
+    {
+      "accepted_transformations": 28,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.10215053763440861,
+      "cache_hits": 19,
+      "candidate_evaluations": 186,
+      "candidate_execution_seconds": 170.8856090005138,
+      "candidate_runs": 167,
+      "classification": "SYNTHETIC",
+      "description": "Large deterministic Python program with a buried exception.",
+      "duplicate_candidate_sources": 13,
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": null,
+      "median_candidate_execution_seconds": 1.0131121999584138,
+      "name": "large_exception",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 273,
+      "original_physical_loc": 308,
+      "profiling": {
+        "cache_lookup_seconds": 0.0590356994071044,
+        "cache_write_seconds": 0.957221600052435,
+        "candidate_call_seconds": 171.18423540022923,
+        "candidate_requests": 186,
+        "duplicate_candidate_sources": 13,
+        "oracle_seconds": 0.02466939965961501,
+        "reducer_bookkeeping_seconds": 0.9619667006772943,
+        "subprocess_source_write_seconds": 0.1693023003754206,
+        "subprocess_startup_seconds": 1.2132476007100195,
+        "subprocess_wait_seconds": 169.50055879924912,
+        "unique_candidate_sources": 167
+      },
+      "reduced_nonblank_loc": 4,
+      "reduced_physical_loc": 4,
+      "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "reduction_fraction": 0.9853479853479854,
+      "reduction_percent": 98.53479853479854,
+      "rejected_transformations": 156,
+      "repeat": 2,
+      "source": "benchmarks/large_reduction_v1/large_exception.py",
+      "source_sha256": "79f6fef6c79691e96853940c731db5b28480023ef10f5456ef868901b001f492",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\large_exception-repeat-2\\export\\repro.py\", line 4, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\large_exception-repeat-2\\export\\repro.py\", line 2, in main\n    raise RuntimeError('REPROREDUCE_LARGE_TARGET')\nRuntimeError: REPROREDUCE_LARGE_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "unique_candidate_sources": 167,
+      "wall_time_seconds": 173.18873639998492
+    },
+    {
+      "accepted_transformations": 28,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.10215053763440861,
+      "cache_hits": 19,
+      "candidate_evaluations": 186,
+      "candidate_execution_seconds": 186.93299149989616,
+      "candidate_runs": 167,
+      "classification": "SYNTHETIC",
+      "description": "Large deterministic Python program with a buried exception.",
+      "duplicate_candidate_sources": 13,
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": null,
+      "median_candidate_execution_seconds": 1.0793082999880426,
+      "name": "large_exception",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 273,
+      "original_physical_loc": 308,
+      "profiling": {
+        "cache_lookup_seconds": 0.05779019999317825,
+        "cache_write_seconds": 0.9633375000557862,
+        "candidate_call_seconds": 187.2278158000554,
+        "candidate_requests": 186,
+        "duplicate_candidate_sources": 13,
+        "oracle_seconds": 0.024543800042010844,
+        "reducer_bookkeeping_seconds": 1.03856399981305,
+        "subprocess_source_write_seconds": 0.17208270024275407,
+        "subprocess_startup_seconds": 5.22911970037967,
+        "subprocess_wait_seconds": 181.52941130060935,
+        "unique_candidate_sources": 167
+      },
+      "reduced_nonblank_loc": 4,
+      "reduced_physical_loc": 4,
+      "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "reduction_fraction": 0.9853479853479854,
+      "reduction_percent": 98.53479853479854,
+      "rejected_transformations": 156,
+      "repeat": 3,
+      "source": "benchmarks/large_reduction_v1/large_exception.py",
+      "source_sha256": "79f6fef6c79691e96853940c731db5b28480023ef10f5456ef868901b001f492",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\large_exception-repeat-3\\export\\repro.py\", line 4, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\large_exception-repeat-3\\export\\repro.py\", line 2, in main\n    raise RuntimeError('REPROREDUCE_LARGE_TARGET')\nRuntimeError: REPROREDUCE_LARGE_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "unique_candidate_sources": 167,
+      "wall_time_seconds": 189.31379640003433
+    },
+    {
+      "accepted_transformations": 20,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.4564102564102564,
+      "cache_hits": 178,
+      "candidate_evaluations": 390,
+      "candidate_execution_seconds": 230.69379060016945,
+      "candidate_runs": 212,
+      "classification": "SYNTHETIC",
+      "description": "Nested function, branch, loop, and exception-handler stress test.",
+      "duplicate_candidate_sources": 88,
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": "Nested structure was reduced recursively; retained control-flow shape is recorded in the exported source.",
+      "median_candidate_execution_seconds": 1.0511969499930274,
+      "name": "nested_python",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 200,
+      "original_physical_loc": 289,
+      "profiling": {
+        "cache_lookup_seconds": 0.14878449955722317,
+        "cache_write_seconds": 1.157405999780167,
+        "candidate_call_seconds": 231.0704303996754,
+        "candidate_requests": 390,
+        "duplicate_candidate_sources": 88,
+        "oracle_seconds": 0.02841319947037846,
+        "reducer_bookkeeping_seconds": 1.5878902014810592,
+        "subprocess_source_write_seconds": 0.2080833002110012,
+        "subprocess_startup_seconds": 6.079157600004692,
+        "subprocess_wait_seconds": 224.40345640003216,
+        "unique_candidate_sources": 212
+      },
+      "reduced_nonblank_loc": 55,
+      "reduced_physical_loc": 65,
+      "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "reduction_fraction": 0.725,
+      "reduction_percent": 72.5,
+      "rejected_transformations": 368,
+      "repeat": 1,
+      "source": "benchmarks/large_reduction_v1/nested_python.py",
+      "source_sha256": "caf34bba770656e945cd5cba9ca6a1c6b76d8ff7824bdc783f3d0932e8389729",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-1\\export\\repro.py\", line 65, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-1\\export\\repro.py\", line 63, in main\n    reproduce()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-1\\export\\repro.py\", line 56, in reproduce\n    raise RuntimeError('REPROREDUCE_NESTED_TARGET')\nRuntimeError: REPROREDUCE_NESTED_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "unique_candidate_sources": 212,
+      "wall_time_seconds": 233.9952789999661
+    },
+    {
+      "accepted_transformations": 20,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.4564102564102564,
+      "cache_hits": 178,
+      "candidate_evaluations": 390,
+      "candidate_execution_seconds": 219.56349580024835,
+      "candidate_runs": 212,
+      "classification": "SYNTHETIC",
+      "description": "Nested function, branch, loop, and exception-handler stress test.",
+      "duplicate_candidate_sources": 88,
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": "Nested structure was reduced recursively; retained control-flow shape is recorded in the exported source.",
+      "median_candidate_execution_seconds": 1.0216756500303745,
+      "name": "nested_python",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 200,
+      "original_physical_loc": 289,
+      "profiling": {
+        "cache_lookup_seconds": 0.146481599425897,
+        "cache_write_seconds": 1.1679187004338019,
+        "candidate_call_seconds": 221.23986519948812,
+        "candidate_requests": 390,
+        "duplicate_candidate_sources": 88,
+        "oracle_seconds": 0.028413700172677636,
+        "reducer_bookkeeping_seconds": 1.6133810004685074,
+        "subprocess_source_write_seconds": 0.21251579991076142,
+        "subprocess_startup_seconds": 1.5036295994650573,
+        "subprocess_wait_seconds": 217.84434149978915,
+        "unique_candidate_sources": 212
+      },
+      "reduced_nonblank_loc": 55,
+      "reduced_physical_loc": 65,
+      "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "reduction_fraction": 0.725,
+      "reduction_percent": 72.5,
+      "rejected_transformations": 368,
+      "repeat": 2,
+      "source": "benchmarks/large_reduction_v1/nested_python.py",
+      "source_sha256": "caf34bba770656e945cd5cba9ca6a1c6b76d8ff7824bdc783f3d0932e8389729",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-2\\export\\repro.py\", line 65, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-2\\export\\repro.py\", line 63, in main\n    reproduce()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-2\\export\\repro.py\", line 56, in reproduce\n    raise RuntimeError('REPROREDUCE_NESTED_TARGET')\nRuntimeError: REPROREDUCE_NESTED_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "unique_candidate_sources": 212,
+      "wall_time_seconds": 224.1988079000148
+    },
+    {
+      "accepted_transformations": 20,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.4564102564102564,
+      "cache_hits": 178,
+      "candidate_evaluations": 390,
+      "candidate_execution_seconds": 227.22044049965916,
+      "candidate_runs": 212,
+      "classification": "SYNTHETIC",
+      "description": "Nested function, branch, loop, and exception-handler stress test.",
+      "duplicate_candidate_sources": 88,
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": "Nested structure was reduced recursively; retained control-flow shape is recorded in the exported source.",
+      "median_candidate_execution_seconds": 1.0380126500094775,
+      "name": "nested_python",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 200,
+      "original_physical_loc": 289,
+      "profiling": {
+        "cache_lookup_seconds": 0.15466610016301274,
+        "cache_write_seconds": 1.1457437000935897,
+        "candidate_call_seconds": 228.6809347998351,
+        "candidate_requests": 390,
+        "duplicate_candidate_sources": 88,
+        "oracle_seconds": 0.027929599746130407,
+        "reducer_bookkeeping_seconds": 1.9155493002035655,
+        "subprocess_source_write_seconds": 0.2140059998491779,
+        "subprocess_startup_seconds": 1.453106000146363,
+        "subprocess_wait_seconds": 225.55044099979568,
+        "unique_candidate_sources": 212
+      },
+      "reduced_nonblank_loc": 55,
+      "reduced_physical_loc": 65,
+      "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "reduction_fraction": 0.725,
+      "reduction_percent": 72.5,
+      "rejected_transformations": 368,
+      "repeat": 3,
+      "source": "benchmarks/large_reduction_v1/nested_python.py",
+      "source_sha256": "caf34bba770656e945cd5cba9ca6a1c6b76d8ff7824bdc783f3d0932e8389729",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-3\\export\\repro.py\", line 65, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-3\\export\\repro.py\", line 63, in main\n    reproduce()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\speed-baseline-v1\\nested_python-repeat-3\\export\\repro.py\", line 56, in reproduce\n    raise RuntimeError('REPROREDUCE_NESTED_TARGET')\nRuntimeError: REPROREDUCE_NESTED_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "unique_candidate_sources": 212,
+      "wall_time_seconds": 231.9264697000035
+    }
+  ],
+  "schema_version": 1,
+  "status_labels": [
+    "OBSERVED",
+    "COMPUTATIONALLY VERIFIED",
+    "NOT FRESHLY EXECUTED"
+  ],
+  "suite": "large-reduction-v1"
+}

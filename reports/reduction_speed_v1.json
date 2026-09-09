@@ -1,0 +1,172 @@
+{
+  "baseline_commit": "52af4a953b4d316d0115f05aff8bca1d206c61c0",
+  "benchmarks": {
+    "large_exception": {
+      "baseline_cache_hits": 19,
+      "baseline_candidate_requests": 186,
+      "baseline_duplicate_sources": 13,
+      "baseline_reduced_nonblank_loc": 4,
+      "baseline_reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "baseline_unique_executions": 167,
+      "baseline_wall_time_seconds": 173.18873639998492,
+      "baseline_wall_times_seconds": [
+        170.8825465000118,
+        173.18873639998492,
+        189.31379640003433
+      ],
+      "fingerprint_preserved": true,
+      "optimized_cache_hits": 19,
+      "optimized_candidate_requests": 186,
+      "optimized_duplicate_sources": 13,
+      "optimized_reduced_nonblank_loc": 4,
+      "optimized_reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "optimized_unique_executions": 167,
+      "optimized_wall_time_seconds": 179.41331979999086,
+      "optimized_wall_times_seconds": [
+        178.03586320002796,
+        179.41331979999086,
+        179.98996310000075
+      ],
+      "profiled_candidate_call_fraction": 0.9877469721577664,
+      "profiled_repeat_wall_time_seconds": 170.8825465000118,
+      "profiling_baseline": {
+        "cache_lookup_seconds": 0.05905670009087771,
+        "cache_write_seconds": 0.9559749002801254,
+        "candidate_call_seconds": 168.7887178999954,
+        "candidate_requests": 186,
+        "duplicate_candidate_sources": 13,
+        "oracle_seconds": 0.024541199789382517,
+        "reducer_bookkeeping_seconds": 1.0513262998429127,
+        "subprocess_source_write_seconds": 0.17011790029937401,
+        "subprocess_startup_seconds": 1.2564510004012845,
+        "subprocess_wait_seconds": 167.05982670007506,
+        "unique_candidate_sources": 167
+      },
+      "profiling_optimized": {
+        "cache_lookup_seconds": 0.04988509998656809,
+        "cache_write_seconds": 0.9184610998490825,
+        "candidate_call_seconds": 176.01520519977203,
+        "candidate_requests": 186,
+        "duplicate_candidate_sources": 13,
+        "memory_cache_entries": 167,
+        "memory_cache_hits": 19,
+        "oracle_seconds": 0.02457029971992597,
+        "reducer_bookkeeping_seconds": 1.024540500715375,
+        "sqlite_cache_hits": 0,
+        "subprocess_source_write_seconds": 0.15966719953576103,
+        "subprocess_startup_seconds": 1.1507921998854727,
+        "subprocess_wait_seconds": 172.2674160003662,
+        "unique_candidate_sources": 167
+      },
+      "speedup": 0.9653059014406228,
+      "wall_time_reduction_fraction": -0.035941040562996296
+    },
+    "nested_python": {
+      "baseline_cache_hits": 178,
+      "baseline_candidate_requests": 390,
+      "baseline_duplicate_sources": 88,
+      "baseline_reduced_nonblank_loc": 55,
+      "baseline_reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "baseline_unique_executions": 212,
+      "baseline_wall_time_seconds": 231.9264697000035,
+      "baseline_wall_times_seconds": [
+        233.9952789999661,
+        224.1988079000148,
+        231.9264697000035
+      ],
+      "fingerprint_preserved": true,
+      "optimized_cache_hits": 178,
+      "optimized_candidate_requests": 390,
+      "optimized_duplicate_sources": 88,
+      "optimized_reduced_nonblank_loc": 55,
+      "optimized_reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "optimized_unique_executions": 212,
+      "optimized_wall_time_seconds": 219.55279349995544,
+      "optimized_wall_times_seconds": [
+        219.55279349995544,
+        215.2840317999944,
+        221.67022600001656
+      ],
+      "profiled_candidate_call_fraction": 0.9875003948250975,
+      "profiled_repeat_wall_time_seconds": 233.9952789999661,
+      "profiling_baseline": {
+        "cache_lookup_seconds": 0.14878449955722317,
+        "cache_write_seconds": 1.157405999780167,
+        "candidate_call_seconds": 231.0704303996754,
+        "candidate_requests": 390,
+        "duplicate_candidate_sources": 88,
+        "oracle_seconds": 0.02841319947037846,
+        "reducer_bookkeeping_seconds": 1.5878902014810592,
+        "subprocess_source_write_seconds": 0.2080833002110012,
+        "subprocess_startup_seconds": 6.079157600004692,
+        "subprocess_wait_seconds": 224.40345640003216,
+        "unique_candidate_sources": 212
+      },
+      "profiling_optimized": {
+        "cache_lookup_seconds": 0.06478299986338243,
+        "cache_write_seconds": 1.1639651993755251,
+        "candidate_call_seconds": 216.7079729003599,
+        "candidate_requests": 390,
+        "duplicate_candidate_sources": 88,
+        "memory_cache_entries": 212,
+        "memory_cache_hits": 178,
+        "oracle_seconds": 0.02823309978703037,
+        "reducer_bookkeeping_seconds": 1.5858627005945891,
+        "sqlite_cache_hits": 0,
+        "subprocess_source_write_seconds": 0.20202899997821078,
+        "subprocess_startup_seconds": 1.3931976995663717,
+        "subprocess_wait_seconds": 214.73617080022814,
+        "unique_candidate_sources": 212
+      },
+      "speedup": 1.0563585459460372,
+      "wall_time_reduction_fraction": 0.053351720552006876
+    }
+  },
+  "final_full_suite": {
+    "command": "python -m unittest discover -s tests -v",
+    "commit": "54bd6a24a24b652f836e25e60315b68842fa50f4",
+    "returncode": 0,
+    "tests": 105,
+    "wall_time_seconds": 1240
+  },
+  "inductor_baseline": {
+    "cache_hits": 367,
+    "candidate_execution_seconds": 574.6368982995045,
+    "candidate_requests": 445,
+    "fingerprint_preserved": true,
+    "note": "Warm-cache retry; no optimized full reduction was run because the cold-start attempt exceeded 40 minutes.",
+    "reduced_nonblank_loc": 28,
+    "reduced_source_sha256": "70d018b600711fdd7d96c05a7a17f7146a2c90ee82ccbc70c856bfdf0a26fc1a",
+    "standalone_repro_success": true,
+    "unique_executions": 78,
+    "wall_time_seconds": 577.8431013000081
+  },
+  "inductor_direct_probe": {
+    "note": "One fresh original-fixture execution, not a reduction run.",
+    "process_startup_seconds": 0.011286000022664666,
+    "process_wait_seconds": 19.926844700006768,
+    "source_write_seconds": 0.0010460999910719693,
+    "target_fingerprint_observed": true,
+    "wall_time_seconds": 19.939197200001217
+  },
+  "notes": [
+    "Large exception and nested Python each have three baseline and three optimized repeats.",
+    "The optimization did not reduce requested duplicate candidates or unique executions; it removed SQLite reads for duplicate in-process requests.",
+    "The nested median improved, while the large-exception median regressed slightly; the observed change is not a universal material speedup."
+  ],
+  "optimization": "In-memory memoization of candidate source -> run/oracle results before SQLite lookup; SQLite remains the persistent checkpoint.",
+  "optimized_commit": "54bd6a24a24b652f836e25e60315b68842fa50f4",
+  "profile_conclusion": {
+    "candidate_call_fraction_basis": "first repeat wall time paired with first-repeat profiling record",
+    "large_exception_candidate_call_fraction": 0.9877469721577664,
+    "nested_python_candidate_call_fraction": 0.9875003948250975,
+    "ranked_bottlenecks": [
+      "candidate subprocess execution",
+      "reducer bookkeeping / AST work",
+      "SQLite cache writes",
+      "cache lookup and oracle classification"
+    ]
+  },
+  "schema_version": 1,
+  "status": "OBSERVED / COMPUTATIONALLY VERIFIED"
+}

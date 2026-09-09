@@ -2,7 +2,13 @@
 
 ## Current frontier
 
-**OBSERVED:** `feat/large-reduction-benchmarks` adds a deterministic large-input reduction suite covering synthetic exceptions, a historical Inductor compiler failure, nested Python structure, and generated PyTorch-heavy syntax. It is a reduction benchmark, not a new bug-hunting campaign.
+**OBSERVED:** `feat/reduction-speed` profiles the reduction pipeline and evaluates a low-risk in-memory candidate-result memoization pass. It is a performance milestone, not a new bug-hunting campaign.
+
+**COMPUTATIONALLY VERIFIED:** the optimization preserved reduced-source hashes, reduced LOC, failure fingerprints, standalone repro success, and deterministic candidate counts on three-repeat large-exception and nested-Python comparisons. It produced a 1.056x nested median speedup but a 0.965x large-exception median, so no broad speedup claim is made.
+
+**OBSERVED:** isolated candidate execution dominates the measured Python benchmark wall time at approximately 98.8% in representative runs. The historical Inductor record attributes 99.4% of wall time to candidate execution; no full optimized Inductor reduction was attempted because the cold baseline exceeded 40 minutes.
+
+The v1 large-input benchmark suite remains the evidence base: synthetic exceptions, a historical Inductor compiler failure, nested Python structure, and generated PyTorch-heavy syntax. It is a reduction benchmark, not a new bug-hunting campaign.
 
 **COMPUTATIONALLY VERIFIED:** the completed suite reduced 273 -> 4, 152 -> 28, 200 -> 55, and 331 -> 4 nonblank LOC respectively, with configured fingerprints preserved and fresh exported repro verification for all completed measurements. See `reports/LARGE_REDUCTION_BENCHMARKS_V1.md` and `reports/large_benchmarks_v1.json`.
 
