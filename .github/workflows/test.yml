@@ -18,12 +18,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e .
+      - run: reproreduce --version
+      - run: reproreduce --help
+      - run: reproreduce reduce --help
       - run: >-
           python -m unittest -v
           tests.test_ast
           tests.test_ddmin
           tests.test_integration
           tests.test_metrics
+          tests.test_productization
           tests.test_modules
           tests.test_oracle
 
@@ -53,6 +57,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[test]"
+      - run: reproreduce summarize --help
       - run: >-
           python -m unittest -v
           tests.test_hunt_program
@@ -63,4 +68,5 @@ jobs:
           tests.test_hunt_reduce
           tests.test_hunt_export
           tests.test_hunt_campaign
+          tests.test_hunt_failures
       - run: python -m reproreduce.cli.main hunt --backend aot_eager --cases 2 --seed 42

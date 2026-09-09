@@ -1,40 +1,39 @@
 # ReproReduce
 
-ReproReduce is a framework-aware reducer for Python and PyTorch bug reproducers. It repeatedly simplifies a failing program while checking that the original failure is preserved.
+ReproReduce is a failure-preserving reducer for self-contained Python programs and PyTorch compiler reproducers. It runs candidates in isolated subprocesses, keeps only transformations that preserve the configured failure, and exports a small standalone reproducer.
 
-The current release supports self-contained Python scripts, exception matching, recursive statement reduction, conservative PyTorch tensor reduction, repeated-module reduction, eager-vs-compiled discrepancy checks, and a small PyTorch correctness-search frontend.
+## Why use it?
 
-## Why
+Compiler failures are often buried under irrelevant setup. ReproReduce turns a large failing script into a smaller artifact that is easier to debug or attach to an issue.
 
-A useful bug report is often much smaller than the program that exposed the bug. ReproReduce searches for a smaller reproducer without accepting unrelated failures such as `NameError` or a different exception message.
+## Install
 
-## Installation
+Core reduction has no runtime dependencies:
 
 ```bash
 python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# Unix:    source .venv/bin/activate
+# Windows: .venv\Scripts\activate
+# Unix:   source .venv/bin/activate
 python -m pip install -e .
 ```
 
-For the PyTorch integration tests:
+Install the optional PyTorch test dependency only when needed:
 
 ```bash
 python -m pip install -e ".[test]"
 ```
 
-## Quickstart
-
-Given a failing script:
+## Quickstart: reduce an exception
 
 ```bash
-reproreduce reduce bug.py \
+reproreduce reduce examples/exception_bug/bug.py \
   --exception-type RuntimeError \
-  --message "illegal memory access" \
+  --message REPROREDUCE_TARGET \
   --output repro
+python repro/repro.py
 ```
 
-The input file is never modified. The output directory contains:
+The input is never modified. An export contains:
 
 ```text
 repro/
@@ -44,13 +43,39 @@ repro/
 └── reduction.json
 ```
 
-Run the generated reproducer with:
+## Real PyTorch / Inductor example
+
+The tracked fixture in `examples/inductor_index_fill/bug.py` reproduces a historical PyTorch compiler failure:
 
 ```bash
-python repro/repro.py
+reproreduce reduce examples/inductor_index_fill/bug.py \
+  --exception-type AssertionError \
+  --message "n=copy_" \
+  --timeout 60 \
+  --output .hunt/inductor-index-fill-reduced
+python .hunt/inductor-index-fill-reduced/repro.py
 ```
 
-A Python API is also available:
+In the verified PyTorch 2.5.1+cu124 environment, the 26-line fixture reduced to 13 nonblank lines while preserving the `n=copy_` assertion fingerprint. Eager execution succeeds; the compiled Inductor path fails. The issue is known upstream as [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952) and passes on the latest nightly tested by this project, so this example does not claim a current unfixed bug.
+
+## What ReproReduce validates
+
+- repeated failure matching with a configurable oracle;
+- isolated subprocess execution, timeouts, and SQLite candidate caching;
+- exception fingerprints that normalize paths, line numbers, addresses, and relevant frames;
+- eager-versus-compiled tensor and gradient comparisons;
+- structured PyTorch Inductor hunts for broadcasting, dynamic shapes, and aliasing/mutation;
+- compiler-failure fingerprint clustering with:
+
+  ```bash
+  reproreduce summarize .hunt/campaign.json
+  ```
+
+- standalone export with environment and reduction metadata.
+
+A compiler crash is not automatically a novel bug, and a numerical discrepancy is not automatically a correctness defect. Re-run candidates, inspect the failure stage, compare controls, and check upstream reports.
+
+## Python API
 
 ```python
 from reproreduce import reduce
@@ -60,128 +85,61 @@ result = reduce(
     "bug.py",
     oracle=ExceptionOracle(
         exception_type="RuntimeError",
-        message_regex="illegal memory access",
+        message_regex="REPROREDUCE_TARGET",
     ),
 )
+print(result.original_loc, result.reduced_loc)
 result.export("repro")
 ```
 
-## What it reduces
-
-- Python statement lists, including nested function, branch, loop, context-manager, and `try` blocks;
-- explicit `torch.randn`, `torch.zeros`, `torch.ones`, `torch.empty`, and `torch.tensor` constructors;
-- tensor shapes, selected values, selected dtypes, and simple contiguous-layout attempts;
-- repeated `nn.Sequential` modules;
-- iteration-based `nn.ModuleList` modules; statically indexed lists are left unchanged;
-- eager-vs-`torch.compile` tensor value, shape, dtype, NaN, Inf, and exception discrepancies;
-- candidates in isolated subprocesses with timeouts and a SQLite evaluation cache.
-
-## Failure matching
-
-`ExceptionOracle` matches the configured exception type and optional message pattern. Structured fingerprints normalize temporary paths, line numbers, and hexadecimal addresses. A candidate must preserve the baseline exception type, normalized message signature, and signal when applicable.
-
-`CompileDifferenceOracle` compares eager and compiled function outputs using absolute and relative tolerances. It reports mismatch counts, maximum errors, NaN/Inf mismatches, shape and dtype mismatches, nested output paths, and one-sided exceptions.
-
-`GradientDifferenceOracle` compares input gradients after explicit output scalarization. It distinguishes numerical, shape, dtype, `None`, NaN, Inf, and execution discrepancies.
-
-## Compile discrepancy check
-
-For a direct function comparison:
+For direct eager/compiled comparisons:
 
 ```python
 from reproreduce import CompileDifferenceOracle
 
-oracle = CompileDifferenceOracle(atol=1e-5, rtol=1e-5)
-result = oracle.evaluate_function(model, inputs)
+result = CompileDifferenceOracle(atol=1e-5, rtol=1e-5).evaluate_function(model, inputs)
 print(result.interesting, result.metadata)
 ```
 
-## PyTorch correctness search
+## Structured PyTorch hunts
 
-The hunt frontend generates short, shape-valid PyTorch tensor programs, compares eager execution with a selected `torch.compile` backend, confirms and deduplicates numerical or gradient discrepancies, and can hand confirmed source to the reducer. It deliberately treats compiler-only errors as unsupported/error outcomes rather than correctness bugs.
+These commands are exploratory research tools, not required for ordinary reduction:
 
 ```bash
-reproreduce hunt \
-  --backend aot_eager \
-  --mode gradient \
-  --cases 1000 \
-  --seed 42 \
+# Differential forward/gradient search
+reproreduce hunt --backend aot_eager --mode gradient --cases 100 --seed 42 \
   --output .hunt/campaign.json
 
-# Structured broadcasting × layout coverage (Linux/WSL Inductor)
-reproreduce hunt \
-  --backend inductor \
-  --family broadcast \
-  --mode forward \
-  --cases 250 \
-  --seed 1500 \
+# Structured Inductor families
+reproreduce hunt --backend inductor --family broadcast --cases 250 --seed 1500 \
   --output .hunt/broadcast-forward.json
-
-# One dynamic callable reused across four compatible shapes
-reproreduce hunt \
-  --backend inductor \
-  --family dynamic \
-  --mode gradient \
-  --cases 200 \
-  --seed 4000 \
+reproreduce hunt --backend inductor --family dynamic --mode gradient --cases 200 --seed 4000 \
   --output .hunt/dynamic-gradient.json
-
-# Storage aliasing, views, and in-place write propagation (forward v1)
-reproreduce hunt \
-  --backend inductor \
-  --family alias_mutation \
-  --mode forward \
-  --cases 400 \
-  --seed 5000 \
+reproreduce hunt --backend inductor --family alias_mutation --cases 400 --seed 5000 \
   --output .hunt/alias-mutation.json
 ```
 
-Supported initial operations include elementwise arithmetic, `sin`, `cos`, `exp`, `relu`, reductions, reshape, transpose, permute, slicing, and concatenation. Configurations cover 1D–3D edge-case shapes, `float32`, `bfloat16`, `float64`, gradients, and contiguous or derived non-contiguous layouts. `--family broadcast` selects structured scalar/tensor, row/matrix, column/matrix, singleton-middle, multi-axis, and chained broadcasting cases. `--family dynamic` generates a four-shape trace and compiles one callable with `dynamic=True`; it records shape-level outcomes and secondary graph-count observations. `--family alias_mutation` records returned views plus post-mutation input state, validates storage-alias relationships, and covers eight structured view/write patterns and eight in-place mutation families; v1 is forward-only. All families write a coverage report beside `--output`. Cluster compiler-only failures from a saved campaign with `reproreduce summarize .hunt/campaign.json`. Use Inductor on Linux/WSL or CI; a local Windows missing-MSVC failure is not a correctness finding.
+## Failure statuses
 
-Search results are candidates only. Re-run findings, test stable and nightly PyTorch where practical, inspect semantics, and search upstream issues before calling one a new bug. The frontend does not file issues automatically.
+Execution statuses include `PASS`, `COMPILE_FAILURE`, `COMPILED_RUNTIME_FAILURE`, `EAGER_ERROR`, `FORWARD_MISMATCH`, `GRADIENT_MISMATCH`, `NONFINITE_COMPARISON`, `INFRASTRUCTURE_ERROR`, and `TIMEOUT`. Cluster-level research labels include `FALSE_POSITIVE`, `KNOWN_UNSUPPORTED`, `KNOWN_EXISTING_ISSUE`, `FIXED_IN_NIGHTLY`, `POTENTIALLY_NOVEL`, and `CONFIRMED_CURRENT_DEFECT`.
 
-## Example
+These labels describe evidence, not certainty. In particular, compiler failure does not imply a PyTorch defect, and a fixed nightly result does not imply that the stable version was never defective.
 
-The included example contains irrelevant imports, assignments, and a function. It reduces while preserving `RuntimeError: REPROREDUCE_TARGET`:
+## v0.1 scope and limitations
 
-```bash
-reproreduce reduce examples/exception_bug/bug.py \
-  --exception-type RuntimeError \
-  --message REPROREDUCE_TARGET \
-  --output repro
-```
+ReproReduce v0.1 supports self-contained Python scripts, exception-preserving AST reduction, selected PyTorch tensor/module reductions, eager/compiled differential checks, repeated validation, failure clustering, structured Inductor hunts, and standalone export.
 
-## Historical benchmark
-
-The repository includes a reduced, CPU reproducer for [PyTorch issue #91468](https://github.com/pytorch/pytorch/issues/91468), an AOTAutograd gradient correctness issue involving `Tensor.retain_grad()`.
-
-```text
-Original: 39 LOC
-Reduced:  28 LOC
-Failure:  eager [1.0, 1.0] vs aot_eager [None, None]
-```
-
-This demonstrates reduction of a known bug; it is not a claim of automated bug discovery.
-
-## Current limitations
-
-- Input programs should be self-contained Python scripts.
-- AST output is regenerated with `ast.unparse`; comments and formatting are not preserved.
-- `ModuleList` reduction is conservative and skips statically indexed containers.
-- Compile-discrepancy source reduction currently uses an explicit source adapter.
-- Gradient source reduction currently uses an explicit source adapter.
-- Historical benchmarks are illustrative and may require pinned framework versions or backends.
+It does **not** promise arbitrary-project reduction, global minimality, universal `torch.compile` support, automatic upstream issue filing, distributed or multi-GPU support, or support for every tensor/operator/dynamic-shape combination. Generated hunt artifacts and caches belong in ignored `.hunt/`; historical research evidence is documented under `reports/`.
 
 ## Development
 
 ```bash
+python -m pip install -e ".[test]"
 python -m unittest discover -s tests -v
 python -m compileall src
 ```
 
-## Citation
-
-No paper is associated with this project yet.
+See `docs/ARCHITECTURE.md` for the pipeline and `docs/RELEASE_CHECKLIST.md` for the v0.1 verification sequence. Research results and limitations are summarized in `reports/STATUS.md`.
 
 ## License
 

@@ -3,15 +3,31 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from importlib.metadata import PackageNotFoundError, version
 
 from ..api import reduce
 from ..oracle.exception import ExceptionOracle
 
 
+def _package_version() -> str:
+    try:
+        return version("reproreduce")
+    except PackageNotFoundError:
+        return "0.1.0"
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="reproreduce")
+    parser = argparse.ArgumentParser(
+        prog="reproreduce",
+        description="Reduce failing Python/PyTorch programs and inspect compiler failures.",
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {_package_version()}")
     commands = parser.add_subparsers(dest="command", required=True)
-    reduce_parser = commands.add_parser("reduce", help="reduce a failing Python script")
+    reduce_parser = commands.add_parser(
+        "reduce",
+        help="reduce a failing Python script while preserving its oracle",
+        description="Reduce a self-contained failing Python script and export a reproducer.",
+    )
     reduce_parser.add_argument("program")
     reduce_parser.add_argument("--oracle", choices=["exception"], default="exception")
     reduce_parser.add_argument("--exception-type")
@@ -19,7 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     reduce_parser.add_argument("--timeout", type=float, default=30.0)
     reduce_parser.add_argument("--output", default="repro")
     reduce_parser.add_argument("--cache")
-    hunt_parser = commands.add_parser("hunt", help="search generated PyTorch programs")
+    hunt_parser = commands.add_parser(
+        "hunt",
+        help="search generated PyTorch programs",
+        description="Run a structured eager-versus-compiled PyTorch campaign.",
+    )
     hunt_parser.add_argument("--backend", choices=["aot_eager", "eager", "inductor"], default="aot_eager")
     hunt_parser.add_argument("--mode", choices=["forward", "gradient"], default="forward")
     hunt_parser.add_argument(
@@ -38,7 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     hunt_parser.add_argument("--output")
     hunt_parser.add_argument("--coverage-output")
-    summarize_parser = commands.add_parser("summarize", help="cluster hunt failure records")
+    summarize_parser = commands.add_parser(
+        "summarize",
+        help="cluster hunt failure records",
+        description="Cluster compiler/runtime failures from a saved campaign JSON file.",
+    )
     summarize_parser.add_argument("campaign")
     return parser
 

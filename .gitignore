@@ -8,5 +8,6 @@ venv/
 .mypy_cache/
 *.sqlite3
 repro/
+.reproreduce-*
 .hunt/
 .DS_Store

@@ -27,6 +27,12 @@ class IntegrationTests(unittest.TestCase):
             self.assertLess(result.reduced_loc, result.original_loc)
             self.assertIn("REPROREDUCE_TARGET", result.reduced_source)
             compile(result.reduced_source, "repro.py", "exec")
+            export = result.export(root / "repro")
+            self.assertEqual(
+                {path.name for path in export.iterdir()},
+                {"repro.py", "README.md", "environment.json", "reduction.json"},
+            )
+            self.assertIn("original_run", (export / "reduction.json").read_text(encoding="utf-8"))
 
     def test_rejects_unrelated_exception(self):
         with tempfile.TemporaryDirectory() as directory:
