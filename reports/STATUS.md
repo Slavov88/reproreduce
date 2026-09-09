@@ -2,7 +2,13 @@
 
 ## Current frontier
 
-**OBSERVED:** `feat/bug-hunter` now supports deterministic generic, structured broadcasting, dynamic-shape, storage-alias/mutation, and compiler-failure triage workflows. Dynamic cases compile one callable with `dynamic=True` and reuse it over a four-shape trace. Alias cases validate storage relationships and compare returned observables plus post-mutation state.
+**OBSERVED:** `feat/large-reduction-benchmarks` adds a deterministic large-input reduction suite covering synthetic exceptions, a historical Inductor compiler failure, nested Python structure, and generated PyTorch-heavy syntax. It is a reduction benchmark, not a new bug-hunting campaign.
+
+**COMPUTATIONALLY VERIFIED:** the completed suite reduced 273 -> 4, 152 -> 28, 200 -> 55, and 331 -> 4 nonblank LOC respectively, with configured fingerprints preserved and fresh exported repro verification for all completed measurements. See `reports/LARGE_REDUCTION_BENCHMARKS_V1.md` and `reports/large_benchmarks_v1.json`.
+
+**OBSERVED:** the historical Inductor benchmark required a warm-cache retry after a cold-start 40-minute timeout. Nested reduction remains limited by dependent definitions and unsimplified expressions/control flow.
+
+The earlier hunt infrastructure remains available: deterministic generic, structured broadcasting, dynamic-shape, storage-alias/mutation, and compiler-failure triage workflows. Dynamic cases compile one callable with `dynamic=True` and reuse it over a four-shape trace. Alias cases validate storage relationships and compare returned observables plus post-mutation state.
 
 ## Confirmed results
 

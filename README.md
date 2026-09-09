@@ -58,6 +58,10 @@ python .hunt/inductor-index-fill-reduced/repro.py
 
 In the verified PyTorch 2.5.1+cu124 environment, the 26-line fixture reduced to 13 nonblank lines while preserving the `n=copy_` assertion fingerprint. Eager execution succeeds; the compiled Inductor path fails. The issue is known upstream as [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952) and passes on the latest nightly tested by this project, so this example does not claim a current unfixed bug.
 
+## Large-input benchmark evidence
+
+**COMPUTATIONALLY VERIFIED:** in the v1 large-reduction benchmark suite, ReproReduce reduced a 273-nonblank-line synthetic exception program to 4 lines, a 152-line historical Inductor wrapper to 28 lines, a 200-line nested Python program to 55 lines, and a 331-line generated PyTorch exception program to 4 lines. Every completed reduction preserved its configured failure and its exported `repro.py` reproduced the failure in a fresh subprocess. These are deterministic benchmark fixtures, not a claim of arbitrary-project or global-minimal reduction; the nested case and the expensive Inductor runs expose current limitations. See [`reports/LARGE_REDUCTION_BENCHMARKS_V1.md`](reports/LARGE_REDUCTION_BENCHMARKS_V1.md) and [`reports/large_benchmarks_v1.json`](reports/large_benchmarks_v1.json).
+
 ## What ReproReduce validates
 
 - repeated failure matching with a configurable oracle;
