@@ -2,7 +2,11 @@
 
 ## Current frontier
 
-**OBSERVED:** `feat/reduction-speed` profiles the reduction pipeline and evaluates a low-risk in-memory candidate-result memoization pass. It is a performance milestone, not a new bug-hunting campaign.
+**OBSERVED:** `feat/reducer-search-speed` adds search traces and generic exact-source scheduler deduplication. It is a performance milestone, not a new bug-hunting campaign.
+
+**COMPUTATIONALLY VERIFIED:** pass 2 reduced evaluation-layer requests from 186 -> 168 for large exception and 390 -> 213 for nested Python, while fresh oracle executions remained 167 and 212 respectively. Reduced-source hashes, fingerprints, standalone reproducers, and first-occurrence oracle order were unchanged.
+
+**OBSERVED:** pass 2 produced no wall-time speedup; measured medians were noisy and unfavorable. The eliminated requests were already answered by v1 memoization, so expensive oracle executions did not decrease. Canonical pre-unparse state deduplication is the next bottleneck.
 
 **COMPUTATIONALLY VERIFIED:** the optimization preserved reduced-source hashes, reduced LOC, failure fingerprints, standalone repro success, and deterministic candidate counts on three-repeat large-exception and nested-Python comparisons. It produced a 1.056x nested median speedup but a 0.965x large-exception median, so no broad speedup claim is made.
 

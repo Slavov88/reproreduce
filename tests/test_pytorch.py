@@ -20,7 +20,8 @@ class PyTorchTensorReductionTests(unittest.TestCase):
                 oracle=ExceptionOracle(
                     exception_type="RuntimeError", message_regex="REPROREDUCE_TARGET"
                 ),
-                timeout=15,
+                # Torch process teardown can exceed 15 seconds on a cold Windows worker.
+                timeout=30,
             )
 
     def test_composed_model_and_tensor_reduction(self):

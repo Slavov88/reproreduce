@@ -1,0 +1,150 @@
+{
+  "baseline_commit": "2497018bf19f00a59b440ce216cad18f3c886ebd",
+  "baseline_mode": "scheduler_deduplicate=false",
+  "benchmarks": {
+    "large_exception": {
+      "baseline_no_dedup": {
+        "cache_hits": 19,
+        "candidate_requests": 186,
+        "fingerprint_preserved": true,
+        "oracle_executions": 167,
+        "reduced_nonblank_loc": 4,
+        "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "repeats": 3,
+        "scheduler_requests": 184,
+        "skipped_duplicate_candidates": 0,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 166,
+        "wall_time_range_seconds": [
+          160.55189860000974,
+          174.15948989999015
+        ],
+        "wall_time_seconds": 161.25005159998545
+      },
+      "optimized_dedup": {
+        "cache_hits": 1,
+        "candidate_requests": 168,
+        "fingerprint_preserved": true,
+        "oracle_executions": 167,
+        "reduced_nonblank_loc": 4,
+        "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "repeats": 3,
+        "scheduler_requests": 184,
+        "skipped_duplicate_candidates": 18,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 166,
+        "wall_time_range_seconds": [
+          166.62758289999329,
+          209.3897377999965
+        ],
+        "wall_time_seconds": 199.79599320003763
+      },
+      "oracle_order_identical": true,
+      "speedup": 0.8070735004106934,
+      "wall_time_reduction_fraction": -0.23904452257586528
+    },
+    "nested_python": {
+      "baseline_no_dedup": {
+        "cache_hits": 178,
+        "candidate_requests": 390,
+        "fingerprint_preserved": true,
+        "oracle_executions": 212,
+        "reduced_nonblank_loc": 55,
+        "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "repeats": 3,
+        "scheduler_requests": 388,
+        "skipped_duplicate_candidates": 0,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 211,
+        "wall_time_range_seconds": [
+          204.29714700003387,
+          210.1106306000147
+        ],
+        "wall_time_seconds": 206.60635040001944
+      },
+      "optimized_dedup": {
+        "cache_hits": 1,
+        "candidate_requests": 213,
+        "fingerprint_preserved": true,
+        "oracle_executions": 212,
+        "reduced_nonblank_loc": 55,
+        "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "repeats": 3,
+        "scheduler_requests": 388,
+        "skipped_duplicate_candidates": 177,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 211,
+        "wall_time_range_seconds": [
+          216.11258339998312,
+          312.8173842999968
+        ],
+        "wall_time_seconds": 259.50044329999946
+      },
+      "oracle_order_identical": true,
+      "speedup": 0.7961695470445459,
+      "wall_time_reduction_fraction": -0.25601387758686744
+    }
+  },
+  "duplicate_causes": {
+    "large_exception": {
+      "causes": {
+        "ddmin_granularity_repeat": 1,
+        "ddmin_restart_or_changed_parent": 9,
+        "identical_ddmin_state": 4,
+        "non_ast_or_final_normalization": 4
+      },
+      "distinct_duplicated_sources": 12,
+      "duplicate_source_requests": 18
+    },
+    "nested_python": {
+      "causes": {
+        "ddmin_granularity_repeat": 25,
+        "ddmin_restart_or_changed_parent": 12,
+        "identical_ddmin_state": 118,
+        "non_ast_or_final_normalization": 22
+      },
+      "distinct_duplicated_sources": 88,
+      "duplicate_source_requests": 177
+    }
+  },
+  "final_full_suite": {
+    "command": "python -m unittest discover -s tests -v",
+    "commit": "e88ad5018696f057e10c7d8b0079f1b5573c3fca",
+    "returncode": 0,
+    "tests": 108,
+    "wall_time_seconds": 1461
+  },
+  "inductor_baseline": {
+    "cache_hits": 367,
+    "candidate_execution_seconds": 574.64,
+    "candidate_requests": 445,
+    "optimized_run": "NOT TESTED: cold-start reduction exceeded 40 minutes; no pass-2 Inductor claim.",
+    "oracle_executions": 78,
+    "wall_time_seconds": 577.84
+  },
+  "metric_definitions": {
+    "candidate_request": "Evaluation layer is asked to classify a candidate after scheduler filtering.",
+    "memory_cache_hit": "Evaluation answered by the in-process source memo.",
+    "oracle_execution": "Fresh candidate subprocess/oracle execution (candidate_runs).",
+    "scheduler_request": "Candidate source is generated and offered to the scheduler.",
+    "skipped_duplicate": "Scheduler reused a prior exact source outcome before session evaluation.",
+    "sqlite_cache_hit": "Evaluation answered by persistent SQLite cache.",
+    "unique_source_candidate": "Distinct candidate SHA-256 seen by the scheduler in a reduction scope; baseline/final direct evaluations are separate."
+  },
+  "notes": [
+    "Three repeats were run for both cheap benchmarks in both modes.",
+    "The first-occurrence oracle execution order was identical before and after.",
+    "Exact source deduplication eliminated evaluation-layer requests but did not reduce fresh oracle executions because the previous implementation already memoized duplicate sources.",
+    "Wall-time changes are noisy and unfavorable in this run; no speedup claim is made."
+  ],
+  "optimized_commit": "2497018bf19f00a59b440ce216cad18f3c886ebd",
+  "optimized_mode": "scheduler_deduplicate=true",
+  "quality_requirements": {
+    "fingerprints_preserved": true,
+    "monotonicity_assumption_used": false,
+    "reduced_source_hashes_identical": true,
+    "standalone_repros_succeeded": true
+  },
+  "schema_version": 2,
+  "status": "OBSERVED / COMPUTATIONALLY VERIFIED"
+}
