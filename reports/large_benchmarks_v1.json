@@ -1,0 +1,527 @@
+{
+  "baseline_commit": "e194923c053206f181613ed381259f8f536d3219",
+  "baseline_full_suite": {
+    "command": "python -m unittest discover -s tests -v",
+    "returncode": 0,
+    "tests": 102,
+    "wall_time_seconds": 1162
+  },
+  "code_commit": "1aacfb9796830a23fd3edd875955958aac86a95c",
+  "determinism": {
+    "generated_pytorch": {
+      "candidate_runs": [
+        154
+      ],
+      "exact_candidate_count_match": true,
+      "exact_reduced_source_match": true,
+      "fingerprint_preserved": [
+        true
+      ],
+      "reduced_nonblank_loc": [
+        4
+      ],
+      "reduced_source_sha256": [
+        "fd7d9b97a3424998d5801a52b8f479eeec28bdc6459810843e2f0a80de69fc1d"
+      ],
+      "repeats": 1
+    },
+    "large_exception": {
+      "candidate_runs": [
+        167,
+        167
+      ],
+      "exact_candidate_count_match": true,
+      "exact_reduced_source_match": true,
+      "fingerprint_preserved": [
+        true,
+        true
+      ],
+      "reduced_nonblank_loc": [
+        4,
+        4
+      ],
+      "reduced_source_sha256": [
+        "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e"
+      ],
+      "repeats": 2
+    },
+    "large_inductor_index_fill": {
+      "candidate_runs": [
+        78
+      ],
+      "exact_candidate_count_match": true,
+      "exact_reduced_source_match": true,
+      "fingerprint_preserved": [
+        true
+      ],
+      "reduced_nonblank_loc": [
+        28
+      ],
+      "reduced_source_sha256": [
+        "70d018b600711fdd7d96c05a7a17f7146a2c90ee82ccbc70c856bfdf0a26fc1a"
+      ],
+      "repeats": 1
+    },
+    "nested_python": {
+      "candidate_runs": [
+        212,
+        212
+      ],
+      "exact_candidate_count_match": true,
+      "exact_reduced_source_match": true,
+      "fingerprint_preserved": [
+        true,
+        true
+      ],
+      "reduced_nonblank_loc": [
+        55,
+        55
+      ],
+      "reduced_source_sha256": [
+        "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c"
+      ],
+      "repeats": 2
+    }
+  },
+  "environment": {
+    "cuda_available": true,
+    "executable": "C:\\Program Files\\Python310\\python.exe",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "torch": "2.5.1+cu121"
+  },
+  "execution_notes": [
+    "Large exception and nested Python were each run twice with fresh per-repeat caches.",
+    "Generated PyTorch was run once because one reduction took approximately 15 minutes; its source hash and target fingerprint were observed.",
+    "The historical Inductor reduction completed after a cold-start timeout and a warm-cache retry. The retry metrics are reported separately from the timeout attempt.",
+    "The historical fixture was freshly executed under PyTorch 2.5.1+cu121 on Windows. Prior exact cu124 evidence remains documented in reports/INDUCTOR_COMPILER_FAILURE_TRIAGE_V1.md."
+  ],
+  "final_full_suite": {
+    "command": "python -m unittest discover -s tests -v",
+    "commit": "1aacfb9796830a23fd3edd875955958aac86a95c",
+    "returncode": 0,
+    "tests": 105,
+    "wall_time_seconds": 1200
+  },
+  "records": [
+    {
+      "accepted_transformations": 28,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.10215053763440861,
+      "cache_hits": 19,
+      "candidate_evaluations": 186,
+      "candidate_execution_seconds": 215.66968669986818,
+      "candidate_runs": 167,
+      "classification": "SYNTHETIC",
+      "description": "Large deterministic Python program with a buried exception.",
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": null,
+      "measurement_commit": "1aacfb9796830a23fd3edd875955958aac86a95c",
+      "median_candidate_execution_seconds": 1.164074799977243,
+      "name": "large_exception",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 273,
+      "original_physical_loc": 308,
+      "reduced_nonblank_loc": 4,
+      "reduced_physical_loc": 4,
+      "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "reduction_fraction": 0.9853479853479854,
+      "reduction_percent": 98.53479853479854,
+      "rejected_transformations": 156,
+      "repeat": 1,
+      "source": "benchmarks/large_reduction_v1/large_exception.py",
+      "source_sha256": "79f6fef6c79691e96853940c731db5b28480023ef10f5456ef868901b001f492",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\large_exception-repeat-1\\export\\repro.py\", line 4, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\large_exception-repeat-1\\export\\repro.py\", line 2, in main\n    raise RuntimeError('REPROREDUCE_LARGE_TARGET')\nRuntimeError: REPROREDUCE_LARGE_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "wall_time_seconds": 219.54762339999434
+    },
+    {
+      "accepted_transformations": 28,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.10215053763440861,
+      "cache_hits": 19,
+      "candidate_evaluations": 186,
+      "candidate_execution_seconds": 187.22311589942547,
+      "candidate_runs": 167,
+      "classification": "SYNTHETIC",
+      "description": "Large deterministic Python program with a buried exception.",
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_LARGE_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_LARGE_TARGET",
+        "message_signature": "REPROREDUCE_LARGE_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": null,
+      "measurement_commit": "1aacfb9796830a23fd3edd875955958aac86a95c",
+      "median_candidate_execution_seconds": 1.0520562000456266,
+      "name": "large_exception",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 273,
+      "original_physical_loc": 308,
+      "reduced_nonblank_loc": 4,
+      "reduced_physical_loc": 4,
+      "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+      "reduction_fraction": 0.9853479853479854,
+      "reduction_percent": 98.53479853479854,
+      "rejected_transformations": 156,
+      "repeat": 2,
+      "source": "benchmarks/large_reduction_v1/large_exception.py",
+      "source_sha256": "79f6fef6c79691e96853940c731db5b28480023ef10f5456ef868901b001f492",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\large_exception-repeat-2\\export\\repro.py\", line 4, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\large_exception-repeat-2\\export\\repro.py\", line 2, in main\n    raise RuntimeError('REPROREDUCE_LARGE_TARGET')\nRuntimeError: REPROREDUCE_LARGE_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "wall_time_seconds": 189.66340699995635
+    },
+    {
+      "accepted_transformations": 20,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.4564102564102564,
+      "cache_hits": 178,
+      "candidate_evaluations": 390,
+      "candidate_execution_seconds": 211.1218161995057,
+      "candidate_runs": 212,
+      "classification": "SYNTHETIC",
+      "description": "Nested function, branch, loop, and exception-handler stress test.",
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": "Nested structure was reduced recursively; retained control-flow shape is recorded in the exported source.",
+      "measurement_commit": "1aacfb9796830a23fd3edd875955958aac86a95c",
+      "median_candidate_execution_seconds": 0.9827530999900773,
+      "name": "nested_python",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 200,
+      "original_physical_loc": 289,
+      "reduced_nonblank_loc": 55,
+      "reduced_physical_loc": 65,
+      "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "reduction_fraction": 0.725,
+      "reduction_percent": 72.5,
+      "rejected_transformations": 368,
+      "repeat": 1,
+      "source": "benchmarks/large_reduction_v1/nested_python.py",
+      "source_sha256": "caf34bba770656e945cd5cba9ca6a1c6b76d8ff7824bdc783f3d0932e8389729",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\nested_python-repeat-1\\export\\repro.py\", line 65, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\nested_python-repeat-1\\export\\repro.py\", line 63, in main\n    reproduce()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\nested_python-repeat-1\\export\\repro.py\", line 56, in reproduce\n    raise RuntimeError('REPROREDUCE_NESTED_TARGET')\nRuntimeError: REPROREDUCE_NESTED_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "wall_time_seconds": 216.3619426000514
+    },
+    {
+      "accepted_transformations": 20,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.4564102564102564,
+      "cache_hits": 178,
+      "candidate_evaluations": 390,
+      "candidate_execution_seconds": 216.5895862999023,
+      "candidate_runs": 212,
+      "classification": "SYNTHETIC",
+      "description": "Nested function, branch, loop, and exception-handler stress test.",
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_NESTED_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\", \"in reproduce\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_NESTED_TARGET",
+        "message_signature": "REPROREDUCE_NESTED_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main",
+          "in reproduce"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": "Nested structure was reduced recursively; retained control-flow shape is recorded in the exported source.",
+      "measurement_commit": "1aacfb9796830a23fd3edd875955958aac86a95c",
+      "median_candidate_execution_seconds": 1.0027180500037502,
+      "name": "nested_python",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 200,
+      "original_physical_loc": 289,
+      "reduced_nonblank_loc": 55,
+      "reduced_physical_loc": 65,
+      "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+      "reduction_fraction": 0.725,
+      "reduction_percent": 72.5,
+      "rejected_transformations": 368,
+      "repeat": 2,
+      "source": "benchmarks/large_reduction_v1/nested_python.py",
+      "source_sha256": "caf34bba770656e945cd5cba9ca6a1c6b76d8ff7824bdc783f3d0932e8389729",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\nested_python-repeat-2\\export\\repro.py\", line 65, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\nested_python-repeat-2\\export\\repro.py\", line 63, in main\n    reproduce()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1-repeats\\nested_python-repeat-2\\export\\repro.py\", line 56, in reproduce\n    raise RuntimeError('REPROREDUCE_NESTED_TARGET')\nRuntimeError: REPROREDUCE_NESTED_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 10.0,
+      "wall_time_seconds": 220.112334800011
+    },
+    {
+      "accepted_transformations": 25,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.10982658959537572,
+      "cache_hits": 19,
+      "candidate_evaluations": 173,
+      "candidate_execution_seconds": 887.4645579999196,
+      "candidate_runs": 154,
+      "classification": "GENERATED_REALISTIC",
+      "description": "Deterministic PyTorch-heavy generated program with a target exception.",
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_GENERATED_TORCH_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_after_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_GENERATED_TORCH_TARGET",
+        "message_signature": "REPROREDUCE_GENERATED_TORCH_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"RuntimeError\", \"message_signature\": \"REPROREDUCE_GENERATED_TORCH_TARGET\", \"relevant_frames\": [\"in <module>\", \"in main\"], \"signal\": null}",
+      "fingerprint_before_metadata": {
+        "exception_type": "RuntimeError",
+        "message": "REPROREDUCE_GENERATED_TORCH_TARGET",
+        "message_signature": "REPROREDUCE_GENERATED_TORCH_TARGET",
+        "relevant_frames": [
+          "in <module>",
+          "in main"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": null,
+      "measurement_commit": "e194923c053206f181613ed381259f8f536d3219",
+      "median_candidate_execution_seconds": 5.923144849977689,
+      "name": "generated_pytorch",
+      "oracle": "exception:RuntimeError",
+      "original_nonblank_loc": 331,
+      "original_physical_loc": 392,
+      "reduced_nonblank_loc": 4,
+      "reduced_physical_loc": 4,
+      "reduced_source_sha256": "fd7d9b97a3424998d5801a52b8f479eeec28bdc6459810843e2f0a80de69fc1d",
+      "reduction_fraction": 0.9879154078549849,
+      "reduction_percent": 98.79154078549848,
+      "rejected_transformations": 146,
+      "repeat": 1,
+      "source": "benchmarks/large_reduction_v1/generated_pytorch.py",
+      "source_sha256": "f5e72a3a8b25727d65760c6c3cd0f1ea01933f099a0c5b2361bae02c94ee9a24",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "Traceback (most recent call last):\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1\\generated_pytorch-repeat-1\\export\\repro.py\", line 4, in <module>\n    main()\n  File \"C:\\Users\\Slavo\\ReproReduce\\.benchmarks\\large-reduction-v1\\generated_pytorch-repeat-1\\export\\repro.py\", line 2, in main\n    raise RuntimeError('REPROREDUCE_GENERATED_TORCH_TARGET')\nRuntimeError: REPROREDUCE_GENERATED_TORCH_TARGET\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 30.0,
+      "wall_time_seconds": 889.9147785999812
+    },
+    {
+      "accepted_transformations": 46,
+      "baseline_interesting": true,
+      "cache_hit_ratio": 0.8247191011235955,
+      "cache_hits": 367,
+      "cache_warm_start": true,
+      "candidate_evaluations": 445,
+      "candidate_execution_seconds": 574.6368982995045,
+      "candidate_runs": 78,
+      "classification": "HISTORICAL_REAL_BUG",
+      "cold_start_attempt": {
+        "candidate_cache_rows_after_timeout": 298,
+        "note": "The first cold-start reducer process was externally stopped at the 40-minute harness budget; its committed SQLite cache remained for the completed retry.",
+        "status": "TIMEOUT",
+        "termination_normal": false,
+        "timeout_budget_seconds": 2400.0,
+        "wall_time_seconds": 2400.0
+      },
+      "description": "Large wrapper around the verified PyTorch #178952 failure.",
+      "environment": {
+        "cuda_available": true,
+        "executable": "C:\\Program Files\\Python310\\python.exe",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "torch": "2.5.1+cu121"
+      },
+      "export_error": null,
+      "export_success": true,
+      "fingerprint_after": "{\"exception_type\": \"AssertionError\", \"kind\": \"compiler_exception\", \"stage\": \"in _call_user_compiler\", \"target\": \"n=copy_\"}",
+      "fingerprint_after_metadata": {
+        "exception_type": "AssertionError",
+        "message": "n=copy_, n.args[0]=permute_1, placeholders={arg1_1, arg0_1}, graph=graph():",
+        "message_signature": "n=copy_, n.args[0]=permute_1, placeholders={arg1_1, arg0_1}, graph=graph():",
+        "relevant_frames": [
+          "in compile_and_call_fx_graph",
+          "in call_user_compiler",
+          "in _call_user_compiler"
+        ],
+        "signal": null
+      },
+      "fingerprint_before": "{\"exception_type\": \"AssertionError\", \"kind\": \"compiler_exception\", \"stage\": \"in _call_user_compiler\", \"target\": \"n=copy_\"}",
+      "fingerprint_before_metadata": {
+        "exception_type": "AssertionError",
+        "message": "n=copy_, n.args[0]=permute_1, placeholders={arg0_1, arg1_1}, graph=graph():",
+        "message_signature": "n=copy_, n.args[0]=permute_1, placeholders={arg0_1, arg1_1}, graph=graph():",
+        "relevant_frames": [
+          "in compile_and_call_fx_graph",
+          "in call_user_compiler",
+          "in _call_user_compiler"
+        ],
+        "signal": null
+      },
+      "fingerprint_preserved": true,
+      "limitation": "Raw Inductor graph text differed in placeholder ordering across executions; the normalized compiler target fingerprint (AssertionError, _call_user_compiler, n=copy_) and exported standalone failure were preserved. The completed measurement used a warm cache after a separate cold-start timeout attempt.",
+      "measurement_commit": "613f315f3aee645c7fb2db8654a60cf967d1f50b",
+      "median_candidate_execution_seconds": 6.176056099997368,
+      "name": "large_inductor_index_fill",
+      "oracle": "exception:AssertionError",
+      "original_nonblank_loc": 152,
+      "original_physical_loc": 228,
+      "raw_fingerprint_after": "{\"exception_type\": \"AssertionError\", \"message_signature\": \"n=copy_, n.args[0]=permute_1, placeholders={arg1_1, arg0_1}, graph=graph():\", \"relevant_frames\": [\"in compile_and_call_fx_graph\", \"in call_user_compiler\", \"in _call_user_compiler\"], \"signal\": null}",
+      "raw_fingerprint_before": "{\"exception_type\": \"AssertionError\", \"message_signature\": \"n=copy_, n.args[0]=permute_1, placeholders={arg0_1, arg1_1}, graph=graph():\", \"relevant_frames\": [\"in compile_and_call_fx_graph\", \"in call_user_compiler\", \"in _call_user_compiler\"], \"signal\": null}",
+      "reduced_nonblank_loc": 28,
+      "reduced_physical_loc": 33,
+      "reduced_source_sha256": "70d018b600711fdd7d96c05a7a17f7146a2c90ee82ccbc70c856bfdf0a26fc1a",
+      "reduction_fraction": 0.8157894736842105,
+      "reduction_percent": 81.57894736842105,
+      "rejected_transformations": 405,
+      "repeat": 1,
+      "source": "benchmarks/large_reduction_v1/large_inductor_index_fill.py",
+      "source_sha256": "69fb2180c974d5b4d1d4538700ec4ec0533e5c04a892b253df01e71b6d123834",
+      "standalone_repro_success": true,
+      "standalone_returncode": 1,
+      "standalone_stderr_tail": "line 1322, in transform_code_object\n    transformations(instructions, code_options)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\convert_frame.py\", line 219, in _fn\n    return fn(*args, **kwargs)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\convert_frame.py\", line 634, in transform\n    tracer.run()\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\symbolic_convert.py\", line 2796, in run\n    super().run()\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\symbolic_convert.py\", line 983, in run\n    while self.step():\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\symbolic_convert.py\", line 895, in step\n    self.dispatch_table[inst.opcode](self, inst)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\symbolic_convert.py\", line 2987, in RETURN_VALUE\n    self._return(inst)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\symbolic_convert.py\", line 2972, in _return\n    self.output.compile_subgraph(\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\output_graph.py\", line 1117, in compile_subgraph\n    self.compile_and_call_fx_graph(tx, list(reversed(stack_values)), root)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\output_graph.py\", line 1369, in compile_and_call_fx_graph\n    compiled_fn = self.call_user_compiler(gm)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\output_graph.py\", line 1416, in call_user_compiler\n    return self._call_user_compiler(gm)\n  File \"C:\\Users\\Slavo\\AppData\\Roaming\\Python\\Python310\\site-packages\\torch\\_dynamo\\output_graph.py\", line 1465, in _call_user_compiler\n    raise BackendCompilerFailed(self.compiler_fn, e) from e\ntorch._dynamo.exc.BackendCompilerFailed: backend='inductor' raised:\nAssertionError: n=copy_, n.args[0]=permute_1, placeholders={arg0_1, arg1_1}, graph=graph():\n    %arg0_1 : [num_users=2] = placeholder[target=arg0_1]\n    %arg1_1 : [num_users=1] = placeholder[target=arg1_1]\n    %permute : [num_users=1] = call_function[target=torch.ops.aten.permute.default](args = (%arg0_1, [1, 0]), kwargs = {})\n    %scalar_tensor : [num_users=1] = call_function[target=torch.ops.aten.scalar_tensor.default](args = (0.5,), kwargs = {dtype: torch.float64, layout: torch.strided, device: cpu, pin_memory: False})\n    %expand : [num_users=1] = call_function[target=torch.ops.aten.expand.default](args = (%scalar_tensor, [3, 2]), kwargs = {})\n    %index_put : [num_users=1] = call_function[target=torch.ops.aten.index_put.default](args = (%permute, [None, %arg1_1], %expand), kwargs = {})\n    %clone : [num_users=1] = call_function[target=torch.ops.aten.clone.default](args = (%index_put,), kwargs = {memory_format: torch.contiguous_format})\n    %empty : [num_users=1] = call_function[target=torch.ops.aten.empty.memory_format](args = ([2, 3],), kwargs = {dtype: torch.float64, layout: torch.strided, device: cpu, pin_memory: False})\n    %permute_1 : [num_users=1] = call_function[target=torch.ops.aten.permute.default](args = (%empty, [1, 0]), kwargs = {})\n    %copy_ : [num_users=1] = call_function[target=torch.ops.aten.copy_.default](args = (%permute_1, %clone), kwargs = {})\n    %permute_2 : [num_users=2] = call_function[target=torch.ops.aten.permute.default](args = (%copy_, [1, 0]), kwargs = {})\n    %permute_3 : [num_users=0] = call_function[target=torch.ops.aten.permute.default](args = (%permute_2, [1, 0]), kwargs = {})\n    %copy__1 : [num_users=1] = call_function[target=torch.ops.aten.copy_.default](args = (%arg0_1, %permute_2), kwargs = {})\n    return (copy__1,)\n\nSet TORCH_LOGS=\"+dynamo\" and TORCHDYNAMO_VERBOSE=1 for more information\n\n\nYou can suppress this exception and fall back to eager by setting:\n    import torch._dynamo\n    torch._dynamo.config.suppress_errors = True\n\n",
+      "status": "COMPUTATIONALLY VERIFIED",
+      "termination_normal": true,
+      "timeout_seconds": 30.0,
+      "wall_time_seconds": 577.8431013000081
+    }
+  ],
+  "runner": "python -m reproreduce.bench",
+  "schema_version": 1,
+  "status": "OBSERVED / COMPUTATIONALLY VERIFIED",
+  "suite": "large-reduction-v1"
+}

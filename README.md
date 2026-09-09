@@ -6,6 +6,23 @@ ReproReduce is a failure-preserving reducer for self-contained Python programs a
 
 Compiler failures are often buried under irrelevant setup. ReproReduce turns a large failing script into a smaller artifact that is easier to debug or attach to an issue.
 
+**ReproReduce has been computationally verified on failing programs containing hundreds of lines, including a 273 → 4 nonblank-LOC Python reduction and a 152 → 28 nonblank-LOC historical PyTorch Inductor reduction, with the target failure preserved in standalone reproducers.**
+
+## Verified reductions
+
+| Case | Type | Original | Reduced | Reduction | Preserved |
+|---|---|---:|---:|---:|---|
+| Large Python exception | Synthetic | 273 nonblank LOC | 4 LOC | 98.5% | Yes |
+| Historical PyTorch Inductor bug | Historical real bug | 152 nonblank LOC | 28 LOC | 81.6% | Yes |
+| Nested Python | Synthetic | 200 nonblank LOC | 55 LOC | 72.5% | Yes |
+| Generated PyTorch program | Generated realistic | 331 nonblank LOC | 4 LOC | 98.8% | Yes |
+
+> **Historical Inductor result:** the 152 → 28 nonblank-LOC reduction preserves the stable Inductor `AssertionError` at `_call_user_compiler` containing `n=copy_`. Eager execution succeeds, the stable Inductor path fails, and the exported standalone reproducer reproduces the failure. This corresponds to [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952); the latest nightly tested by this project fixes it. This is a historical reduction, not a claim that ReproReduce discovered the issue or that it is currently unfixed.
+
+Large reductions currently take minutes rather than seconds. Compiler-backed cases can be substantially slower because candidate evaluation invokes compiler work; performance optimization is an active development area.
+
+See the [full large-reduction report](reports/LARGE_REDUCTION_BENCHMARKS_V1.md) for environments, costs, fingerprint details, and limitations.
+
 ## Install
 
 Core reduction has no runtime dependencies:
