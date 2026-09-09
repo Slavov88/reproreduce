@@ -10,4 +10,5 @@ venv/
 repro/
 .reproreduce-*
 .hunt/
+.benchmarks/
 .DS_Store
