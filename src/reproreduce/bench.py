@@ -277,6 +277,9 @@ def run_one(
         "candidate_requests",
         "unique_candidate_sources",
         "duplicate_candidate_sources",
+        "memory_cache_hits",
+        "sqlite_cache_hits",
+        "memory_cache_entries",
     }
     record.update(
         {

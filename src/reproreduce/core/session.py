@@ -37,6 +37,9 @@ class ReductionSession:
         self._evaluations = 0
         self._history: list[dict[str, object]] = []
         self._cache: CandidateCache | None = None
+        self._memory_cache: dict[str, tuple[RunResult, OracleResult]] = {}
+        self._memory_cache_hits = 0
+        self._sqlite_cache_hits = 0
         self._candidate_runs = 0
         self._cache_hits = 0
         self._cache_misses = 0
@@ -51,12 +54,16 @@ class ReductionSession:
         self._started_at = 0.0
 
     def _evaluate(self, source: str) -> tuple[RunResult, OracleResult]:
-        if self._cache is not None:
+        cached = self._memory_cache.get(source)
+        if cached is not None:
+            self._memory_cache_hits += 1
+        elif self._cache is not None:
             lookup_started = time.perf_counter()
             cached = self._cache.get(source)
             self._cache_lookup_seconds += time.perf_counter() - lookup_started
-        else:
-            cached = None
+            if cached is not None:
+                self._sqlite_cache_hits += 1
+                self._memory_cache[source] = cached
         if cached is not None:
             self._cache_hits += 1
             key = CandidateCache.key(source)
@@ -84,6 +91,7 @@ class ReductionSession:
         self._candidate_runs += 1
         self._candidate_durations.append(run.duration_seconds)
         self._candidate_run_results.append(run)
+        self._memory_cache[source] = (run, result)
         self._evaluations += 1
         return run, result
 
@@ -186,6 +194,9 @@ class ReductionSession:
             "unique_candidate_sources": self._candidate_runs,
             "duplicate_candidate_sources": len(self._cache_hit_sources),
             "cache_hits": self._cache_hits,
+            "memory_cache_hits": self._memory_cache_hits,
+            "sqlite_cache_hits": self._sqlite_cache_hits,
+            "memory_cache_entries": len(self._memory_cache),
             "cache_misses": self._cache_misses,
             "total_candidate_execution_time": candidate_execution,
             "candidate_call_seconds": self._candidate_call_seconds,

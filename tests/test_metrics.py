@@ -53,6 +53,7 @@ class ReductionMetricsTests(unittest.TestCase):
         self.assertEqual(first[0].stderr, second[0].stderr)
         self.assertEqual(session._candidate_runs, 1)
         self.assertEqual(session._cache_hits, 1)
+        self.assertEqual(session._memory_cache_hits, 1)
         self.assertEqual(session._cache_misses, 1)
 
 
