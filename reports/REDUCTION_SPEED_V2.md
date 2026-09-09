@@ -16,7 +16,7 @@
 - Final full suite: 108 tests passed in 1,461 seconds at `e88ad50`
 - Baseline mode: `scheduler_deduplicate=false`
 - Optimized mode: `scheduler_deduplicate=true`
-- Search traces retained in `reports/speed_search_baseline_v2.json` and `reports/speed_search_optimized_v2.json`
+- Full search traces retained in compressed `reports/speed_search_traces_v2.json.gz` (baseline and optimized JSON objects)
 
 ## Metric definitions
 
@@ -30,7 +30,7 @@
 
 ## Search trace analysis
 
-The trace recorded transformation, scope, collection size, candidate size, granularity, parent hash, candidate hash, evaluation kind, acceptance, and rejection reason.
+The trace recorded transformation, scope, collection size, candidate size, granularity, parent hash, candidate hash, evaluation kind, acceptance, and rejection reason. The raw trace archive is compressed to keep the tracked report compact.
 
 The baseline first-occurrence oracle execution order was identical to the optimized order for both benchmarks. The optimization only replaces later exact-source requests with the prior Boolean outcome.
 

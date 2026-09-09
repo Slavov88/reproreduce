@@ -146,5 +146,7 @@
     "standalone_repros_succeeded": true
   },
   "schema_version": 2,
-  "status": "OBSERVED / COMPUTATIONALLY VERIFIED"
+  "status": "OBSERVED / COMPUTATIONALLY VERIFIED",
+  "trace_archive": "reports/speed_search_traces_v2.json.gz",
+  "trace_archive_contents": "Compressed baseline and optimized JSON traces retaining candidate order and per-request metadata."
 }
