@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 from ..reduce.ast import render_module
 from ..reduce.ddmin import ddmin
+from ..reduce.scheduler import invoke_test
 
 
 def _container_name(call: ast.Call) -> str | None:
@@ -76,7 +77,17 @@ def _reduce_module_collection(
         set_elements(candidate)
         candidate_source = render_module(tree.body)
         ast.parse(candidate_source)
-        if test(candidate_source):
+        if invoke_test(
+            test,
+            candidate_source,
+            metadata={
+                "transform": "RemoveModules",
+                "scope": scope,
+                "collection_size": len(current),
+                "candidate_size": len(candidate),
+                "removed_count": len(current) - len(candidate),
+            },
+        ):
             removed_count = len(current) - len(candidate)
             current = list(candidate)
             history.append(

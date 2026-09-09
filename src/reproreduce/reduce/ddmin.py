@@ -8,8 +8,17 @@ def _chunks(items: Sequence, count: int) -> list[list]:
     return [list(items[index : index + size]) for index in range(0, len(items), size)]
 
 
-def ddmin(items: Sequence, test: Callable[[list], bool]) -> list:
-    """Reduce a sequence using classic delta debugging."""
+def ddmin(
+    items: Sequence,
+    test: Callable[[list], bool],
+    *,
+    on_attempt: Callable[[list, list, int], None] | None = None,
+) -> list:
+    """Reduce a sequence using classic delta debugging.
+
+    ``on_attempt`` is diagnostic-only and runs immediately before each
+    complement candidate is tested.
+    """
     current = list(items)
     granularity = 2
 
@@ -20,6 +29,8 @@ def ddmin(items: Sequence, test: Callable[[list], bool]) -> list:
             candidate = list(current)
             for item in chunk:
                 candidate.remove(item)
+            if on_attempt is not None:
+                on_attempt(list(current), list(candidate), granularity)
             if test(candidate):
                 current = candidate
                 granularity = max(granularity - 1, 2)

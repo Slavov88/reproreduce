@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 from collections.abc import Callable
 
 from .ddmin import ddmin
+from .scheduler import invoke_test
 
 
 _REQUIRED_BLOCK_OWNERS = (
@@ -66,6 +68,25 @@ def _reduce_statement_list(
 ) -> None:
     current = list(getattr(owner, field))
     scope = _scope_name(owner, field)
+    attempt_context: dict[str, object] = {}
+
+    def on_attempt(
+        parent: list[ast.stmt], candidate: list[ast.stmt], granularity: int
+    ) -> None:
+        attempt_context.clear()
+        attempt_context.update(
+            {
+                "transform": "RemoveStatements",
+                "scope": scope,
+                "collection_size": len(parent),
+                "candidate_size": len(candidate),
+                "granularity": granularity,
+                "removed_count": len(parent) - len(candidate),
+                "parent_source_sha256": hashlib.sha256(
+                    render_module(tree.body).encode("utf-8")
+                ).hexdigest(),
+            }
+        )
 
     def candidate_test(candidate: list[ast.stmt]) -> bool:
         nonlocal current
@@ -74,7 +95,11 @@ def _reduce_statement_list(
         try:
             candidate_source = render_module(tree.body)
             ast.parse(candidate_source)
-            accepted = test(candidate_source)
+            metadata = dict(attempt_context)
+            metadata["candidate_source_sha256"] = hashlib.sha256(
+                candidate_source.encode("utf-8")
+            ).hexdigest()
+            accepted = invoke_test(test, candidate_source, metadata=metadata)
         except (SyntaxError, ValueError):
             accepted = False
         if accepted:
@@ -92,7 +117,7 @@ def _reduce_statement_list(
         setattr(owner, field, _repair_block(owner, field, current))
         return False
 
-    reduced = ddmin(current, candidate_test)
+    reduced = ddmin(current, candidate_test, on_attempt=on_attempt)
     # Classic ddmin stops when one item remains. Try the empty set explicitly so
     # required blocks can be repaired with ``pass`` when their contents are
     # irrelevant to the preserved failure.

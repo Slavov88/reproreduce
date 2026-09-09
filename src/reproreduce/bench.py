@@ -184,6 +184,8 @@ def run_one(
     workspace: Path,
     repeat: int,
     timeout: float,
+    trace: bool = False,
+    deduplicate: bool = True,
 ) -> dict[str, object]:
     source_path = root / "benchmarks" / "large_reduction_v1" / spec.filename
     source = source_path.read_text(encoding="utf-8")
@@ -205,6 +207,7 @@ def run_one(
         "fingerprint_before_metadata": baseline.metadata,
         "environment": _environment(),
         "timeout_seconds": timeout,
+        "scheduler_deduplicate": deduplicate,
         "termination_normal": False,
         "export_success": False,
         "standalone_repro_success": False,
@@ -231,6 +234,8 @@ def run_one(
             oracle=oracle,
             timeout=timeout,
             cache=cache_path,
+            trace=trace,
+            deduplicate=deduplicate,
         )
     except Exception as error:  # benchmark records must preserve failures for later diagnosis
         record.update(
@@ -280,6 +285,10 @@ def run_one(
         "memory_cache_hits",
         "sqlite_cache_hits",
         "memory_cache_entries",
+        "scheduler_requests",
+        "unique_source_candidates",
+        "oracle_executions",
+        "skipped_duplicate_candidates",
     }
     record.update(
         {
@@ -292,6 +301,11 @@ def run_one(
             "candidate_runs": candidate_runs,
             "candidate_evaluations": candidate_evaluations,
             "cache_hits": cache_hits,
+            "candidate_requests": result.metrics.get("candidate_requests", candidate_evaluations),
+            "scheduler_requests": result.metrics.get("scheduler_requests", 0),
+            "unique_source_candidates": result.metrics.get("unique_source_candidates", 0),
+            "oracle_executions": result.metrics.get("oracle_executions", candidate_runs),
+            "skipped_duplicate_candidates": result.metrics.get("skipped_duplicate_candidates", 0),
             "unique_candidate_sources": result.metrics.get("unique_candidate_sources", candidate_runs),
             "duplicate_candidate_sources": result.metrics.get("duplicate_candidate_sources", 0),
             "profiling": {key: result.metrics.get(key, 0.0) for key in sorted(profile_keys)},
@@ -307,6 +321,7 @@ def run_one(
             "export_success": export_success,
             "standalone_repro_success": standalone_success,
             "reduced_source_sha256": _sha256(reduced_source),
+            "search_trace": result.search_trace if trace else None,
             "standalone_returncode": standalone_result.returncode if standalone_result else None,
             "standalone_stderr_tail": standalone_result.stderr[-4000:] if standalone_result else None,
             "export_error": export_error,
@@ -349,6 +364,8 @@ def run_benchmarks(
     repeats: int = 1,
     timeout: float = 30.0,
     workspace: Path | None = None,
+    trace: bool = False,
+    deduplicate: bool = True,
 ) -> dict[str, object]:
     selected = [spec for spec in SPECS if names is None or spec.name in names]
     unknown = sorted(set(names or ()) - {spec.name for spec in SPECS})
@@ -359,7 +376,15 @@ def run_benchmarks(
     workspace = workspace or root / ".benchmarks" / "large-reduction-v1"
     workspace.mkdir(parents=True, exist_ok=True)
     records = [
-        run_one(spec, root=root, workspace=workspace, repeat=repeat, timeout=timeout)
+        run_one(
+            spec,
+            root=root,
+            workspace=workspace,
+            repeat=repeat,
+            timeout=timeout,
+            trace=trace,
+            deduplicate=deduplicate,
+        )
         for spec in selected
         for repeat in range(1, repeats + 1)
     ]
@@ -369,6 +394,8 @@ def run_benchmarks(
         "status_labels": ["OBSERVED", "COMPUTATIONALLY VERIFIED", "NOT FRESHLY EXECUTED"],
         "commit": _git_commit(root),
         "command": "python -m reproreduce.bench",
+        "scheduler_deduplicate": deduplicate,
+        "trace_enabled": trace,
         "environment": _environment(),
         "benchmarks": [asdict(spec) for spec in selected],
         "records": records,
@@ -397,6 +424,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--root", type=Path, default=_repo_root())
     parser.add_argument("--workspace", type=Path)
+    parser.add_argument("--trace", action="store_true", help="record reducer search trace events")
+    parser.add_argument(
+        "--no-deduplicate",
+        action="store_true",
+        help="disable scheduler-level duplicate suppression for baseline comparisons",
+    )
     parser.add_argument("--output", type=Path, default=Path("reports/large_benchmarks_v1.json"))
     args = parser.parse_args(argv)
     root = args.root.resolve()
@@ -410,6 +443,8 @@ def main(argv: list[str] | None = None) -> int:
         repeats=args.repeats,
         timeout=args.timeout,
         workspace=workspace,
+        trace=args.trace,
+        deduplicate=not args.no_deduplicate,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

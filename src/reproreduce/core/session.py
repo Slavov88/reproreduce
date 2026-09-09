@@ -19,6 +19,31 @@ from ..pytorch.tensors import reduce_tensor_constructors
 MAX_REDUCTION_PASSES = 2
 
 
+class _SessionCandidateTest:
+    def __init__(self, session: "ReductionSession", *, deduplicate: bool) -> None:
+        self.session = session
+        self.deduplicate = deduplicate
+        self._context: dict[str, object] = {}
+        self._outcomes: dict[str, bool] = {}
+
+    def set_context(self, metadata: dict[str, object]) -> None:
+        self._context = dict(metadata)
+
+    def __call__(self, source: str) -> bool:
+        context = self._context
+        self._context = {}
+        self.session._scheduler_requests += 1
+        key = CandidateCache.key(source)
+        self.session._scheduler_sources.add(key)
+        if self.deduplicate and key in self._outcomes:
+            accepted = self._outcomes[key]
+            self.session._record_skipped_duplicate(source, context, accepted)
+            return accepted
+        accepted = self.session._preserves_failure(source, context=context)
+        self._outcomes[key] = accepted
+        return accepted
+
+
 class ReductionSession:
     def __init__(
         self,
@@ -27,12 +52,16 @@ class ReductionSession:
         oracle: FailureOracle,
         timeout: float,
         cache_path: Path | None,
+        trace: bool = False,
+        deduplicate: bool = True,
     ):
         self.program = program.resolve()
         self.oracle = oracle
         self.timeout = timeout
         self.source = self.program.read_text(encoding="utf-8")
         self.cache_path = cache_path
+        self.trace = trace
+        self.deduplicate = deduplicate
         self._baseline: OracleResult | None = None
         self._evaluations = 0
         self._history: list[dict[str, object]] = []
@@ -50,6 +79,11 @@ class ReductionSession:
         self._cache_lookup_seconds = 0.0
         self._cache_write_seconds = 0.0
         self._cache_hit_sources: dict[str, int] = {}
+        self._search_trace: list[dict[str, object]] = []
+        self._scheduler_requests = 0
+        self._scheduler_sources: set[str] = set()
+        self._skipped_duplicate_candidates = 0
+        self._last_evaluation_kind = "unknown"
         self._rejected_transformations = 0
         self._started_at = 0.0
 
@@ -57,12 +91,14 @@ class ReductionSession:
         cached = self._memory_cache.get(source)
         if cached is not None:
             self._memory_cache_hits += 1
+            self._last_evaluation_kind = "memory_cache_hit"
         elif self._cache is not None:
             lookup_started = time.perf_counter()
             cached = self._cache.get(source)
             self._cache_lookup_seconds += time.perf_counter() - lookup_started
             if cached is not None:
                 self._sqlite_cache_hits += 1
+                self._last_evaluation_kind = "sqlite_cache_hit"
                 self._memory_cache[source] = cached
         if cached is not None:
             self._cache_hits += 1
@@ -70,6 +106,7 @@ class ReductionSession:
             self._cache_hit_sources[key] = self._cache_hit_sources.get(key, 0) + 1
             return cached
         self._cache_misses += 1
+        self._last_evaluation_kind = "oracle_execution"
         source_evaluator = getattr(self.oracle, "evaluate_source", None)
         candidate_started = time.perf_counter()
         if callable(source_evaluator):
@@ -95,10 +132,53 @@ class ReductionSession:
         self._evaluations += 1
         return run, result
 
-    def _preserves_failure(self, source: str) -> bool:
+    def _record_skipped_duplicate(
+        self,
+        source: str,
+        context: dict[str, object],
+        accepted: bool,
+    ) -> None:
+        self._skipped_duplicate_candidates += 1
+        if self.trace:
+            self._search_trace.append(
+                {
+                    **context,
+                    "request_index": len(self._search_trace) + 1,
+                    "candidate_source_sha256": CandidateCache.key(source),
+                    "evaluation_kind": "scheduler_skip_duplicate",
+                    "candidate_previously_tested": True,
+                    "accepted": accepted,
+                    "reason": "skipped_duplicate",
+                }
+            )
+
+    def _preserves_failure(
+        self,
+        source: str,
+        *,
+        context: dict[str, object] | None = None,
+    ) -> bool:
         run, result = self._evaluate(source)
         assert self._baseline is not None
         accepted = result.interesting and self.oracle.same_failure(self._baseline, result)
+        if self.trace:
+            if accepted:
+                reason = "failure_preserved"
+            elif not result.interesting:
+                reason = "oracle_not_interesting"
+            else:
+                reason = "fingerprint_mismatch"
+            self._search_trace.append(
+                {
+                    **(context or {}),
+                    "request_index": len(self._search_trace) + 1,
+                    "candidate_source_sha256": CandidateCache.key(source),
+                    "evaluation_kind": self._last_evaluation_kind,
+                    "candidate_previously_tested": self._last_evaluation_kind != "oracle_execution",
+                    "accepted": accepted,
+                    "reason": reason,
+                }
+            )
         if accepted:
             self._history.append(
                 {
@@ -130,28 +210,29 @@ class ReductionSession:
                     f"stderr:\n{original_run.stderr}"
                 )
             self._baseline = baseline
+            candidate_test = _SessionCandidateTest(self, deduplicate=self.deduplicate)
             reduced_source = self.source
             for _ in range(MAX_REDUCTION_PASSES):
                 before = reduced_source
 
                 reduced_source, ast_history = reduce_top_level_statements(
-                    reduced_source, self._preserves_failure
+                    reduced_source, candidate_test
                 )
                 self._history.extend(ast_history)
                 reduced_source, module_history = reduce_sequential_modules(
-                    reduced_source, self._preserves_failure
+                    reduced_source, candidate_test
                 )
                 self._history.extend(module_history)
                 reduced_source, module_list_history = reduce_module_lists(
-                    reduced_source, self._preserves_failure
+                    reduced_source, candidate_test
                 )
                 self._history.extend(module_list_history)
                 reduced_source, tensor_history = reduce_tensor_constructors(
-                    reduced_source, self._preserves_failure
+                    reduced_source, candidate_test
                 )
                 self._history.extend(tensor_history)
                 reduced_source, cleanup_history = reduce_top_level_statements(
-                    reduced_source, self._preserves_failure
+                    reduced_source, candidate_test
                 )
                 self._history.extend(cleanup_history)
 
@@ -168,6 +249,7 @@ class ReductionSession:
                 reduced_run=reduced_run,
                 history=self._history,
                 metrics=self._metrics(),
+                search_trace=self._search_trace,
             )
         finally:
             self._cache.close()
@@ -191,7 +273,11 @@ class ReductionSession:
         return {
             "candidate_runs": self._candidate_runs,
             "candidate_requests": self._candidate_runs + self._cache_hits,
+            "scheduler_requests": self._scheduler_requests,
+            "unique_source_candidates": len(self._scheduler_sources),
             "unique_candidate_sources": self._candidate_runs,
+            "oracle_executions": self._candidate_runs,
+            "skipped_duplicate_candidates": self._skipped_duplicate_candidates,
             "duplicate_candidate_sources": len(self._cache_hit_sources),
             "cache_hits": self._cache_hits,
             "memory_cache_hits": self._memory_cache_hits,
