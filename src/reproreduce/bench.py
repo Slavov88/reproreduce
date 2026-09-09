@@ -4,7 +4,7 @@ import argparse
 import hashlib
 import json
 import platform
-import shutil
+import re
 import subprocess
 import sys
 import time
@@ -25,6 +25,7 @@ class BenchmarkSpec:
     message: str
     classification: str
     description: str
+    compiler_failure: bool = False
 
 
 SPECS = (
@@ -43,6 +44,7 @@ SPECS = (
         message="n=copy_",
         classification="HISTORICAL_REAL_BUG",
         description="Large wrapper around the verified PyTorch #178952 failure.",
+        compiler_failure=True,
     ),
     BenchmarkSpec(
         name="nested_python",
@@ -91,8 +93,52 @@ def _environment() -> dict[str, object]:
     return environment
 
 
-def _oracle(spec: BenchmarkSpec) -> ExceptionOracle:
-    return ExceptionOracle(exception_type=spec.oracle_type, message_regex=spec.message)
+class BenchmarkOracle:
+    """Use exact exception matching except for stable compiler target signatures."""
+
+    def __init__(self, spec: BenchmarkSpec):
+        self.base = ExceptionOracle(exception_type=spec.oracle_type, message_regex=spec.message)
+        self.compiler_failure = spec.compiler_failure
+        self.message_regex = spec.message
+
+    def evaluate(self, run: RunResult):
+        return self.base.evaluate(run)
+
+    def same_failure(self, baseline, candidate) -> bool:
+        if not self.base.same_failure(baseline, candidate):
+            if not self.compiler_failure or not baseline.interesting or not candidate.interesting:
+                return False
+            if baseline.metadata.get("exception_type") != candidate.metadata.get("exception_type"):
+                return False
+            if baseline.metadata.get("relevant_frames") != candidate.metadata.get("relevant_frames"):
+                return False
+            candidate_message = str(candidate.metadata.get("message_signature") or "")
+            if self.message_regex is None or re.search(self.message_regex, candidate_message) is None:
+                return False
+        return True
+
+
+def _oracle(spec: BenchmarkSpec) -> BenchmarkOracle:
+    return BenchmarkOracle(spec)
+
+
+def _stable_fingerprint(spec: BenchmarkSpec, result) -> str | None:
+    if result.fingerprint is None:
+        return None
+    metadata = result.metadata
+    if spec.compiler_failure:
+        frames = tuple(metadata.get("relevant_frames") or ())
+        stage = frames[-1] if frames else "unknown-stage"
+        return json.dumps(
+            {
+                "kind": "compiler_exception",
+                "exception_type": metadata.get("exception_type"),
+                "target": spec.message,
+                "stage": stage,
+            },
+            sort_keys=True,
+        )
+    return result.fingerprint
 
 
 def _run_exported(path: Path, timeout: float) -> RunResult:
@@ -126,9 +172,9 @@ def _run_exported(path: Path, timeout: float) -> RunResult:
     )
 
 
-def _failure_metadata(oracle: ExceptionOracle, run: RunResult) -> tuple[str | None, dict[str, Any]]:
+def _failure_metadata(oracle: BenchmarkOracle, run: RunResult) -> tuple[Any, dict[str, Any]]:
     result = oracle.evaluate(run)
-    return result.fingerprint, result.metadata
+    return result, result.metadata
 
 
 def run_one(
@@ -155,7 +201,7 @@ def run_one(
         "original_physical_loc": len(source.splitlines()),
         "original_nonblank_loc": _nonblank_loc(source),
         "baseline_interesting": baseline.interesting,
-        "fingerprint_before": baseline.fingerprint,
+        "fingerprint_before": _stable_fingerprint(spec, baseline),
         "fingerprint_before_metadata": baseline.metadata,
         "environment": _environment(),
         "timeout_seconds": timeout,
@@ -199,7 +245,8 @@ def run_one(
     wall_time = time.perf_counter() - started
     reduced_source = result.reduced_source
     reduced_result = oracle.evaluate(result.reduced_run)
-    fingerprint_after, reduced_metadata = _failure_metadata(oracle, result.reduced_run)
+    reduced_result_object, reduced_metadata = _failure_metadata(oracle, result.reduced_run)
+    fingerprint_after = _stable_fingerprint(spec, reduced_result_object)
     fingerprint_preserved = oracle.same_failure(baseline, reduced_result)
     export_success = False
     standalone_success = False
