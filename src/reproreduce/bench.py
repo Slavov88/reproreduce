@@ -186,6 +186,7 @@ def run_one(
     timeout: float,
     trace: bool = False,
     deduplicate: bool = True,
+    structural_deduplicate: bool = True,
 ) -> dict[str, object]:
     source_path = root / "benchmarks" / "large_reduction_v1" / spec.filename
     source = source_path.read_text(encoding="utf-8")
@@ -208,6 +209,7 @@ def run_one(
         "environment": _environment(),
         "timeout_seconds": timeout,
         "scheduler_deduplicate": deduplicate,
+        "structural_state_deduplicate": structural_deduplicate,
         "termination_normal": False,
         "export_success": False,
         "standalone_repro_success": False,
@@ -236,6 +238,7 @@ def run_one(
             cache=cache_path,
             trace=trace,
             deduplicate=deduplicate,
+            structural_deduplicate=structural_deduplicate,
         )
     except Exception as error:  # benchmark records must preserve failures for later diagnosis
         record.update(
@@ -289,6 +292,9 @@ def run_one(
         "unique_source_candidates",
         "oracle_executions",
         "skipped_duplicate_candidates",
+        "skipped_structural_states",
+        "no_op_skips",
+        "syntax_skips",
     }
     record.update(
         {
@@ -306,6 +312,9 @@ def run_one(
             "unique_source_candidates": result.metrics.get("unique_source_candidates", 0),
             "oracle_executions": result.metrics.get("oracle_executions", candidate_runs),
             "skipped_duplicate_candidates": result.metrics.get("skipped_duplicate_candidates", 0),
+            "skipped_structural_states": result.metrics.get("skipped_structural_states", 0),
+            "no_op_skips": result.metrics.get("no_op_skips", 0),
+            "syntax_skips": result.metrics.get("syntax_skips", 0),
             "unique_candidate_sources": result.metrics.get("unique_candidate_sources", candidate_runs),
             "duplicate_candidate_sources": result.metrics.get("duplicate_candidate_sources", 0),
             "profiling": {key: result.metrics.get(key, 0.0) for key in sorted(profile_keys)},
@@ -366,6 +375,7 @@ def run_benchmarks(
     workspace: Path | None = None,
     trace: bool = False,
     deduplicate: bool = True,
+    structural_deduplicate: bool = True,
 ) -> dict[str, object]:
     selected = [spec for spec in SPECS if names is None or spec.name in names]
     unknown = sorted(set(names or ()) - {spec.name for spec in SPECS})
@@ -384,6 +394,7 @@ def run_benchmarks(
             timeout=timeout,
             trace=trace,
             deduplicate=deduplicate,
+            structural_deduplicate=structural_deduplicate,
         )
         for spec in selected
         for repeat in range(1, repeats + 1)
@@ -395,6 +406,7 @@ def run_benchmarks(
         "commit": _git_commit(root),
         "command": "python -m reproreduce.bench",
         "scheduler_deduplicate": deduplicate,
+        "structural_state_deduplicate": structural_deduplicate,
         "trace_enabled": trace,
         "environment": _environment(),
         "benchmarks": [asdict(spec) for spec in selected],
@@ -430,6 +442,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="disable scheduler-level duplicate suppression for baseline comparisons",
     )
+    parser.add_argument(
+        "--no-structural-state-deduplicate",
+        action="store_true",
+        help="disable canonical AST-state suppression for baseline comparisons",
+    )
     parser.add_argument("--output", type=Path, default=Path("reports/large_benchmarks_v1.json"))
     args = parser.parse_args(argv)
     root = args.root.resolve()
@@ -445,6 +462,7 @@ def main(argv: list[str] | None = None) -> int:
         workspace=workspace,
         trace=args.trace,
         deduplicate=not args.no_deduplicate,
+        structural_deduplicate=not args.no_structural_state_deduplicate,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

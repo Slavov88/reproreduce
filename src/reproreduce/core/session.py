@@ -20,14 +20,43 @@ MAX_REDUCTION_PASSES = 2
 
 
 class _SessionCandidateTest:
-    def __init__(self, session: "ReductionSession", *, deduplicate: bool) -> None:
+    def __init__(
+        self,
+        session: "ReductionSession",
+        *,
+        deduplicate: bool,
+        structural_deduplicate: bool = True,
+    ) -> None:
         self.session = session
         self.deduplicate = deduplicate
+        self.structural_deduplicate = structural_deduplicate
         self._context: dict[str, object] = {}
         self._outcomes: dict[str, bool] = {}
+        self._structural_outcomes: dict[str, bool] = {}
 
     def set_context(self, metadata: dict[str, object]) -> None:
         self._context = dict(metadata)
+
+    def reuse_structural_state(
+        self, key: str, context: dict[str, object]
+    ) -> bool | None:
+        if not self.structural_deduplicate:
+            return None
+        accepted = self._structural_outcomes.get(key)
+        if accepted is None:
+            return None
+        self.session._record_skipped_state(
+            {
+                **context,
+                "candidate_state_sha256": CandidateCache.key(key),
+            },
+            accepted,
+        )
+        return accepted
+
+    def remember_structural_state(self, key: str, accepted: bool) -> None:
+        if self.structural_deduplicate:
+            self._structural_outcomes[key] = accepted
 
     def __call__(self, source: str) -> bool:
         context = self._context
@@ -54,6 +83,7 @@ class ReductionSession:
         cache_path: Path | None,
         trace: bool = False,
         deduplicate: bool = True,
+        structural_deduplicate: bool = True,
     ):
         self.program = program.resolve()
         self.oracle = oracle
@@ -62,6 +92,7 @@ class ReductionSession:
         self.cache_path = cache_path
         self.trace = trace
         self.deduplicate = deduplicate
+        self.structural_deduplicate = structural_deduplicate
         self._baseline: OracleResult | None = None
         self._evaluations = 0
         self._history: list[dict[str, object]] = []
@@ -83,6 +114,9 @@ class ReductionSession:
         self._scheduler_requests = 0
         self._scheduler_sources: set[str] = set()
         self._skipped_duplicate_candidates = 0
+        self._skipped_state_candidates = 0
+        self._no_op_skips = 0
+        self._syntax_skips = 0
         self._last_evaluation_kind = "unknown"
         self._rejected_transformations = 0
         self._started_at = 0.0
@@ -131,6 +165,52 @@ class ReductionSession:
         self._memory_cache[source] = (run, result)
         self._evaluations += 1
         return run, result
+
+    def _record_skipped_state(
+        self,
+        context: dict[str, object],
+        accepted: bool,
+    ) -> None:
+        self._skipped_state_candidates += 1
+        if self.trace:
+            self._search_trace.append(
+                {
+                    **context,
+                    "request_index": len(self._search_trace) + 1,
+                    "evaluation_kind": "scheduler_skip_state",
+                    "candidate_previously_tested": True,
+                    "accepted": accepted,
+                    "reason": "skipped_structural_state",
+                }
+            )
+
+    def _record_syntax_skip(self, context: dict[str, object]) -> None:
+        self._syntax_skips += 1
+        if self.trace:
+            self._search_trace.append(
+                {
+                    **context,
+                    "request_index": len(self._search_trace) + 1,
+                    "evaluation_kind": "compile_skip_syntax",
+                    "candidate_previously_tested": False,
+                    "accepted": False,
+                    "reason": "local_compile_rejected",
+                }
+            )
+
+    def _record_no_op(self, context: dict[str, object]) -> None:
+        self._no_op_skips += 1
+        if self.trace:
+            self._search_trace.append(
+                {
+                    **context,
+                    "request_index": len(self._search_trace) + 1,
+                    "evaluation_kind": "no_op_skip",
+                    "candidate_previously_tested": False,
+                    "accepted": True,
+                    "reason": "no_op_transformation",
+                }
+            )
 
     def _record_skipped_duplicate(
         self,
@@ -210,7 +290,11 @@ class ReductionSession:
                     f"stderr:\n{original_run.stderr}"
                 )
             self._baseline = baseline
-            candidate_test = _SessionCandidateTest(self, deduplicate=self.deduplicate)
+            candidate_test = _SessionCandidateTest(
+                self,
+                deduplicate=self.deduplicate,
+                structural_deduplicate=self.structural_deduplicate,
+            )
             reduced_source = self.source
             for _ in range(MAX_REDUCTION_PASSES):
                 before = reduced_source
@@ -278,6 +362,9 @@ class ReductionSession:
             "unique_candidate_sources": self._candidate_runs,
             "oracle_executions": self._candidate_runs,
             "skipped_duplicate_candidates": self._skipped_duplicate_candidates,
+            "skipped_structural_states": self._skipped_state_candidates,
+            "no_op_skips": self._no_op_skips,
+            "syntax_skips": self._syntax_skips,
             "duplicate_candidate_sources": len(self._cache_hit_sources),
             "cache_hits": self._cache_hits,
             "memory_cache_hits": self._memory_cache_hits,

@@ -42,6 +42,22 @@ class SearchSchedulerTests(unittest.TestCase):
         self.assertEqual(session.skips, 1)
         self.assertEqual(session._scheduler_requests, 2)
 
+    def test_ddmin_reuses_known_attempt_without_calling_test(self):
+        tested = []
+
+        def reuse(parent, candidate, granularity):
+            if candidate == [2, 3]:
+                return False
+            return None
+
+        reduced = ddmin(
+            [0, 1, 2, 3],
+            lambda candidate: tested.append(list(candidate)) or 0 in candidate,
+            reuse_attempt=reuse,
+        )
+        self.assertEqual(reduced, [0])
+        self.assertNotIn([2, 3], tested)
+
     def test_invoke_test_attaches_context_to_traceable_test(self):
         seen = []
 

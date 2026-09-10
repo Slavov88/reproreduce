@@ -30,6 +30,9 @@ class ReductionMetricsTests(unittest.TestCase):
         self.assertGreaterEqual(result.metrics["candidate_call_seconds"], 0.0)
         self.assertGreaterEqual(result.metrics["subprocess_startup_seconds"], 0.0)
         self.assertGreaterEqual(result.metrics["reducer_bookkeeping_seconds"], 0.0)
+        self.assertGreaterEqual(result.metrics["skipped_structural_states"], 0)
+        self.assertGreaterEqual(result.metrics["no_op_skips"], 0)
+        self.assertGreaterEqual(result.metrics["syntax_skips"], 0)
 
     def test_cache_hits_are_counted(self):
         with tempfile.TemporaryDirectory() as directory:
