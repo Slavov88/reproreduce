@@ -20,7 +20,9 @@ def reduce(
 ) -> ReductionResult:
     """Reduce a Python program while preserving its baseline failure.
 
-    ``strategy="dependency"`` enables conservative static candidate proposals;
+    ``strategy="dependency"`` enables V1 conservative static candidate proposals;
+    ``strategy="dependency_v2"`` additionally explores coordinated local-function,
+    control-flow, call-result, and expression candidates;
     every accepted proposal is still checked by the configured oracle.
     """
     selected_oracle = oracle or ExceptionOracle()

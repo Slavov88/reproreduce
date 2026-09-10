@@ -32,9 +32,9 @@ def build_parser() -> argparse.ArgumentParser:
     reduce_parser.add_argument("--oracle", choices=["exception"], default="exception")
     reduce_parser.add_argument(
         "--strategy",
-        choices=["standard", "dependency"],
+        choices=["standard", "dependency", "dependency_v2"],
         default="standard",
-        help="candidate strategy; dependency remains oracle-validated and opt-in",
+        help="candidate strategy; dependency variants remain oracle-validated and opt-in",
     )
     reduce_parser.add_argument("--exception-type")
     reduce_parser.add_argument("--message")
