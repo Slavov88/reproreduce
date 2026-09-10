@@ -12,6 +12,9 @@ def reduce(
     oracle: FailureOracle | None = None,
     timeout: float = 30.0,
     cache: str | Path | None = None,
+    trace: bool = False,
+    deduplicate: bool = True,
+    structural_deduplicate: bool = True,
 ) -> ReductionResult:
     """Reduce a Python program while preserving its baseline failure."""
     selected_oracle = oracle or ExceptionOracle()
@@ -20,5 +23,8 @@ def reduce(
         oracle=selected_oracle,
         timeout=timeout,
         cache_path=Path(cache) if cache is not None else None,
+        trace=trace,
+        deduplicate=deduplicate,
+        structural_deduplicate=structural_deduplicate,
     )
     return session.reduce()

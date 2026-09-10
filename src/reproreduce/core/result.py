@@ -16,6 +16,7 @@ class ReductionResult:
     reduced_run: RunResult
     history: list[dict[str, object]] = field(default_factory=list)
     metrics: dict[str, int | float] = field(default_factory=dict)
+    search_trace: list[dict[str, object]] = field(default_factory=list)
 
     @property
     def original_loc(self) -> int:
@@ -71,6 +72,7 @@ class ReductionResult:
                     "reduced_loc": self.reduced_loc,
                     "history": self.history,
                     "metrics": self.metrics,
+                    "search_trace": self.search_trace,
                     "original_run": _run_metadata(self.original_run),
                     "reduced_run": _run_metadata(self.reduced_run),
                 },

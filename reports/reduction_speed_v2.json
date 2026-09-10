@@ -1,0 +1,291 @@
+{
+  "baseline_commit": "2497018bf19f00a59b440ce216cad18f3c886ebd",
+  "baseline_mode": "scheduler_deduplicate=false",
+  "benchmarks": {
+    "large_exception": {
+      "baseline_no_dedup": {
+        "cache_hits": 19,
+        "candidate_requests": 186,
+        "fingerprint_preserved": true,
+        "oracle_executions": 167,
+        "reduced_nonblank_loc": 4,
+        "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "repeats": 3,
+        "scheduler_requests": 184,
+        "skipped_duplicate_candidates": 0,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 166,
+        "wall_time_range_seconds": [
+          160.55189860000974,
+          174.15948989999015
+        ],
+        "wall_time_seconds": 161.25005159998545
+      },
+      "optimized_dedup": {
+        "cache_hits": 1,
+        "candidate_requests": 168,
+        "fingerprint_preserved": true,
+        "oracle_executions": 167,
+        "reduced_nonblank_loc": 4,
+        "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+        "repeats": 3,
+        "scheduler_requests": 184,
+        "skipped_duplicate_candidates": 18,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 166,
+        "wall_time_range_seconds": [
+          166.62758289999329,
+          209.3897377999965
+        ],
+        "wall_time_seconds": 199.79599320003763
+      },
+      "oracle_order_identical": true,
+      "speedup": 0.8070735004106934,
+      "wall_time_reduction_fraction": -0.23904452257586528
+    },
+    "nested_python": {
+      "baseline_no_dedup": {
+        "cache_hits": 178,
+        "candidate_requests": 390,
+        "fingerprint_preserved": true,
+        "oracle_executions": 212,
+        "reduced_nonblank_loc": 55,
+        "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "repeats": 3,
+        "scheduler_requests": 388,
+        "skipped_duplicate_candidates": 0,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 211,
+        "wall_time_range_seconds": [
+          204.29714700003387,
+          210.1106306000147
+        ],
+        "wall_time_seconds": 206.60635040001944
+      },
+      "optimized_dedup": {
+        "cache_hits": 1,
+        "candidate_requests": 213,
+        "fingerprint_preserved": true,
+        "oracle_executions": 212,
+        "reduced_nonblank_loc": 55,
+        "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+        "repeats": 3,
+        "scheduler_requests": 388,
+        "skipped_duplicate_candidates": 177,
+        "standalone_repro_success": true,
+        "unique_source_candidates": 211,
+        "wall_time_range_seconds": [
+          216.11258339998312,
+          312.8173842999968
+        ],
+        "wall_time_seconds": 259.50044329999946
+      },
+      "oracle_order_identical": true,
+      "speedup": 0.7961695470445459,
+      "wall_time_reduction_fraction": -0.25601387758686744
+    }
+  },
+  "canonical_state_pass": {
+    "baseline_mode": "exact-source scheduler deduplication enabled; canonical structural-state deduplication disabled",
+    "benchmark_worktree_commit": "197b076ac6a0eba024a2b88d22a05d1434b584d0",
+    "benchmarks": {
+      "large_exception": {
+        "after": {
+          "candidate_requests": 168,
+          "fingerprint_preserved": true,
+          "no_op_skips": 0,
+          "oracle_executions": 167,
+          "reduced_nonblank_loc": 4,
+          "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+          "repeats": 3,
+          "scheduler_requests": 173,
+          "skipped_duplicate_candidates": 7,
+          "skipped_structural_states": 4,
+          "standalone_repro_success": true,
+          "syntax_skips": 0,
+          "unique_source_candidates": 166,
+          "wall_time_range_seconds": [
+            90.57009300000209,
+            96.40890090000175
+          ],
+          "wall_time_seconds": 96.28953909999836
+        },
+        "before": {
+          "candidate_requests": 168,
+          "fingerprint_preserved": true,
+          "no_op_skips": 0,
+          "oracle_executions": 167,
+          "reduced_nonblank_loc": 4,
+          "reduced_source_sha256": "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e",
+          "repeats": 3,
+          "scheduler_requests": 177,
+          "skipped_duplicate_candidates": 11,
+          "skipped_structural_states": 0,
+          "standalone_repro_success": true,
+          "syntax_skips": 0,
+          "unique_source_candidates": 166,
+          "wall_time_range_seconds": [
+            87.36718880000262,
+            93.04055719999815
+          ],
+          "wall_time_seconds": 88.82468940000035
+        }
+      },
+      "nested_python": {
+        "after": {
+          "candidate_requests": 213,
+          "fingerprint_preserved": true,
+          "no_op_skips": 0,
+          "oracle_executions": 212,
+          "reduced_nonblank_loc": 55,
+          "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+          "repeats": 3,
+          "scheduler_requests": 252,
+          "skipped_duplicate_candidates": 41,
+          "skipped_structural_states": 120,
+          "standalone_repro_success": true,
+          "syntax_skips": 0,
+          "unique_source_candidates": 211,
+          "wall_time_range_seconds": [
+            111.08429459999752,
+            118.14075469999807
+          ],
+          "wall_time_seconds": 115.10071040000184
+        },
+        "before": {
+          "candidate_requests": 213,
+          "fingerprint_preserved": true,
+          "no_op_skips": 0,
+          "oracle_executions": 212,
+          "reduced_nonblank_loc": 55,
+          "reduced_source_sha256": "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c",
+          "repeats": 3,
+          "scheduler_requests": 362,
+          "skipped_duplicate_candidates": 151,
+          "skipped_structural_states": 0,
+          "standalone_repro_success": true,
+          "syntax_skips": 0,
+          "unique_source_candidates": 211,
+          "wall_time_range_seconds": [
+            115.60062259999904,
+            121.23626570000124
+          ],
+          "wall_time_seconds": 116.33781570000065
+        }
+      }
+    },
+    "derived": {
+      "candidate_requests_saved": {
+        "large_exception": 0,
+        "nested_python": 0
+      },
+      "oracle_executions_saved": {
+        "large_exception": 0,
+        "nested_python": 0
+      },
+      "scheduler_requests_saved": {
+        "large_exception": 4,
+        "nested_python": 110
+      },
+      "speedup": {
+        "large_exception": 0.9224749669614096,
+        "nested_python": 1.0107480248879401
+      },
+      "wall_time_reduction_fraction": {
+        "large_exception": -0.08404025671715987,
+        "nested_python": 0.010633733258228917
+      }
+    },
+    "implementation_commit": "d84e73d0a6085f2dcc7f1be94976d41fcc9deabe",
+    "inductor": "NOT TESTED: preserved V2 baseline only.",
+    "metrics": {
+      "candidate_request": "Evaluation layer asked to classify a candidate after scheduler filtering.",
+      "memory_cache_hit": "Result returned by in-process memoization.",
+      "no_op_skip": "Transformation proven not to change the current statement state.",
+      "oracle_execution": "Fresh subprocess/oracle execution.",
+      "scheduler_duplicate_skip": "Exact source reused before ReductionSession.evaluate().",
+      "sqlite_cache_hit": "Result returned by persistent SQLite cache.",
+      "structural_state_skip": "Canonical full-AST state reused before AST unparse/session evaluation.",
+      "syntax_skip": "Candidate rejected by compile(source, ..., \"exec\") before subprocess launch.",
+      "unique_source_candidate": "Distinct source SHA-256 encountered by the scheduler."
+    },
+    "optimized_mode": "exact-source scheduler deduplication enabled; canonical structural-state deduplication enabled",
+    "quality_requirements": {
+      "fingerprints_preserved": true,
+      "monotonicity_assumption_used": false,
+      "reduced_source_hashes_identical": true,
+      "standalone_repros_succeeded": true
+    },
+    "raw_records": {
+      "large_exception_after": "reports/pass2_canonical_v2_large_exception.json",
+      "large_exception_before": "reports/pass2_structural_baseline_large_exception.json",
+      "nested_python_after": "reports/pass2_canonical_v2_nested_python.json",
+      "nested_python_before": "reports/pass2_structural_baseline_nested_python.json"
+    },
+    "status": "OBSERVED / COMPUTATIONALLY VERIFIED"
+  },
+  "duplicate_causes": {
+    "large_exception": {
+      "causes": {
+        "ddmin_granularity_repeat": 1,
+        "ddmin_restart_or_changed_parent": 9,
+        "identical_ddmin_state": 4,
+        "non_ast_or_final_normalization": 4
+      },
+      "distinct_duplicated_sources": 12,
+      "duplicate_source_requests": 18
+    },
+    "nested_python": {
+      "causes": {
+        "ddmin_granularity_repeat": 25,
+        "ddmin_restart_or_changed_parent": 12,
+        "identical_ddmin_state": 118,
+        "non_ast_or_final_normalization": 22
+      },
+      "distinct_duplicated_sources": 88,
+      "duplicate_source_requests": 177
+    }
+  },
+  "final_full_suite": {
+    "command": "python -m unittest discover -s tests -v",
+    "commit": "e88ad5018696f057e10c7d8b0079f1b5573c3fca",
+    "returncode": 0,
+    "tests": 108,
+    "wall_time_seconds": 1461
+  },
+  "inductor_baseline": {
+    "cache_hits": 367,
+    "candidate_execution_seconds": 574.64,
+    "candidate_requests": 445,
+    "optimized_run": "NOT TESTED: cold-start reduction exceeded 40 minutes; no pass-2 Inductor claim.",
+    "oracle_executions": 78,
+    "wall_time_seconds": 577.84
+  },
+  "metric_definitions": {
+    "candidate_request": "Evaluation layer is asked to classify a candidate after scheduler filtering.",
+    "memory_cache_hit": "Evaluation answered by the in-process source memo.",
+    "oracle_execution": "Fresh candidate subprocess/oracle execution (candidate_runs).",
+    "scheduler_request": "Candidate source is generated and offered to the scheduler.",
+    "skipped_duplicate": "Scheduler reused a prior exact source outcome before session evaluation.",
+    "sqlite_cache_hit": "Evaluation answered by persistent SQLite cache.",
+    "unique_source_candidate": "Distinct candidate SHA-256 seen by the scheduler in a reduction scope; baseline/final direct evaluations are separate."
+  },
+  "notes": [
+    "Three repeats were run for both cheap benchmarks in both modes.",
+    "The first-occurrence oracle execution order was identical before and after.",
+    "Exact source deduplication eliminated evaluation-layer requests but did not reduce fresh oracle executions because the previous implementation already memoized duplicate sources.",
+    "Wall-time changes are noisy and unfavorable in this run; no speedup claim is made."
+  ],
+  "optimized_commit": "2497018bf19f00a59b440ce216cad18f3c886ebd",
+  "optimized_mode": "scheduler_deduplicate=true",
+  "quality_requirements": {
+    "fingerprints_preserved": true,
+    "monotonicity_assumption_used": false,
+    "reduced_source_hashes_identical": true,
+    "standalone_repros_succeeded": true
+  },
+  "schema_version": 2,
+  "status": "OBSERVED / COMPUTATIONALLY VERIFIED",
+  "trace_archive": "reports/speed_search_traces_v2.json.gz",
+  "trace_archive_contents": "Compressed baseline and optimized JSON traces retaining candidate order and per-request metadata."
+}

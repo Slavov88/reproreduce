@@ -4,6 +4,7 @@ import ast
 from collections.abc import Callable, Iterator
 
 from ..reduce.ast import render_module
+from ..reduce.scheduler import invoke_test
 
 _CONSTRUCTORS = {"randn", "zeros", "ones", "empty"}
 _DTYPE_CANDIDATES = (
@@ -62,6 +63,13 @@ def reduce_tensor_constructors(
     def candidate_source() -> str:
         return render_module(tree.body)
 
+    def run_candidate(transform: str) -> bool:
+        return invoke_test(
+            test,
+            candidate_source(),
+            metadata={"transform": transform},
+        )
+
     calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
     for call in calls:
         constructor = _torch_constructor(call)
@@ -77,7 +85,7 @@ def reduce_tensor_constructors(
                     if value >= original:
                         continue
                     argument.value = value
-                    if test(candidate_source()):
+                    if run_candidate("TensorShapeChange"):
                         _record(
                             history,
                             "TensorShapeChange",
@@ -101,7 +109,7 @@ def reduce_tensor_constructors(
                         continue
                     dtype_attempts += 1
                     dtype_value.attr = candidate_dtype
-                    if test(candidate_source()):
+                    if run_candidate("DtypeChange"):
                         _record(
                             history,
                             "DtypeChange",
@@ -125,7 +133,7 @@ def reduce_tensor_constructors(
                 original_values = list(values)
                 for length in range(len(original_values) - 1, 0, -1):
                     call.args[0].elts = original_values[:length]
-                    if test(candidate_source()):
+                    if run_candidate("TensorValueListShrink"):
                         _record(history, "TensorValueListShrink", remaining=length)
                         original_values = list(call.args[0].elts)
                     else:
@@ -136,7 +144,7 @@ def reduce_tensor_constructors(
                 original_value = element.value
                 for replacement in (0, 1, -1):
                     element.value = replacement
-                    if test(candidate_source()):
+                    if run_candidate("TensorValueChange"):
                         _record(
                             history,
                             "TensorValueChange",
@@ -153,7 +161,7 @@ def reduce_tensor_constructors(
             original_constructor = function.attr
             for replacement in ("zeros", "ones"):
                 function.attr = replacement
-                if test(candidate_source()):
+                if run_candidate("TensorConstructorChange"):
                     _record(
                         history,
                         "TensorConstructorChange",
@@ -178,7 +186,7 @@ def reduce_tensor_constructors(
             keywords=[],
         )
         _replace_reference(parent, field, index, candidate)
-        if test(candidate_source()):
+        if run_candidate("LayoutChange"):
             _record(history, "LayoutChange", original="noncontiguous", reduced="contiguous")
         else:
             _record(
