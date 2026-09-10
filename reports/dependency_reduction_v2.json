@@ -1,0 +1,83 @@
+{
+  "status": "COMPUTATIONALLY VERIFIED",
+  "implementation_commit": "3913c4e8beb7f92f65286df8432497c716fe9c62",
+  "strategy": "dependency_v2",
+  "v1_preserved": true,
+  "nested_analysis": {
+    "nonblank_loc": 47,
+    "categories": {
+      "TARGET_CORE": 1,
+      "FUNCTION_SIGNATURE": 8,
+      "CALL_ARGUMENT_PLUMBING": 11,
+      "REQUIRED_ASSIGNMENT": 3,
+      "CONTROL_FLOW_SHELL": 9,
+      "EXPRESSION_COMPLEXITY": 5,
+      "RETURN_PLUMBING": 3,
+      "SCOPE_BINDING_REQUIREMENT": 7,
+      "REDUCER_LIMITATION": 0,
+      "UNKNOWN": 0
+    }
+  },
+  "phase_ablation_nested_jobs1": [
+    {"phase": "parameter_call", "candidates": 1, "oracle_runs": 1, "accepted": 1, "loc_removed": 0},
+    {"phase": "call_result", "candidates": 8, "oracle_runs": 8, "accepted": 5, "loc_removed": 5},
+    {"phase": "control_flow", "candidates": 10, "oracle_runs": 10, "accepted": 8, "loc_removed": 16},
+    {"phase": "expression", "candidates": 90, "oracle_runs": 90, "accepted": 31, "loc_removed": 0}
+  ],
+  "benchmarks": {
+    "nested_python_jobs1": {
+      "v1_loc": 47,
+      "v2_loc": 5,
+      "v1_oracle_runs": 302,
+      "v2_oracle_runs": 135,
+      "v2_wall_time_seconds": 79.538,
+      "source_sha256": "c91367cbc2662510e0a89ab812e6e06485270796fd22c137e7c8e388f7097ebc",
+      "fingerprint_preserved": true
+    },
+    "nested_python_jobs4": {
+      "v2_loc": 5,
+      "v2_oracle_runs": 138,
+      "v2_wall_time_seconds": 79.547,
+      "source_sha256": "c91367cbc2662510e0a89ab812e6e06485270796fd22c137e7c8e388f7097ebc",
+      "fingerprint_preserved": true
+    },
+    "large_exception_jobs1_repeat1": {
+      "v1_loc": 4,
+      "v2_loc": 3,
+      "v2_oracle_runs": 98,
+      "v2_wall_time_seconds": 56.711,
+      "source_sha256": "8f549d61f7a45b096acc1fb26607dd8cef7f91278516767ad848e5d779bcdef4",
+      "fingerprint_preserved": true
+    },
+    "large_exception_jobs1_repeat2": {
+      "v2_loc": 3,
+      "v2_oracle_runs": 98,
+      "v2_wall_time_seconds": 52.17,
+      "source_sha256": "8f549d61f7a45b096acc1fb26607dd8cef7f91278516767ad848e5d779bcdef4",
+      "fingerprint_preserved": true
+    },
+    "generated_pytorch_jobs1_repeat1": {
+      "v1_loc": 4,
+      "v2_loc": 3,
+      "v2_oracle_runs": 109,
+      "v2_wall_time_seconds": 373.42,
+      "source_sha256": "8f847a3b568ea9fcc56fa47fc0c63765ac793ee24afc3c5c02e78b21b6c139ce",
+      "fingerprint_preserved": true
+    },
+    "generated_pytorch_jobs1_repeat2": {
+      "v2_loc": 3,
+      "v2_oracle_runs": 109,
+      "v2_wall_time_seconds": 400.854,
+      "source_sha256": "8f847a3b568ea9fcc56fa47fc0c63765ac793ee24afc3c5c02e78b21b6c139ce",
+      "fingerprint_preserved": true
+    },
+    "historical_inductor": {
+      "status": "NOT CHECKED",
+      "v1_loc": 28,
+      "v2_loc": null,
+      "reason": "Approximately 1.82 GiB RAM available; prior V1 compiler run required a warm-cache retry and a cold-start timeout."
+    }
+  },
+  "tests": {"tests_passed": 122, "subtests_passed": 380},
+  "all_accepted_transformations_oracle_validated": true
+}

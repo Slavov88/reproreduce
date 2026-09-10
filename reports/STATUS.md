@@ -2,6 +2,8 @@
 
 ## Current frontier
 
+**COMPUTATIONALLY VERIFIED:** Dependency-aware reduction V2 is implemented on `feat/dependency-reduction-v2` at `3913c4e`. It is opt-in as `strategy="dependency_v2"`, leaving standard mode and V1 dependency mode intact. Nested Python improved from V1's 200 -> 47 to 200 -> 5 nonblank LOC, with identical jobs=1/jobs=4 output hashes and fewer fresh oracle runs (135 vs 302). Large exception and generated PyTorch both reached 3 LOC in repeated serial runs. Historical Inductor V2 remains **NOT CHECKED** because only approximately 1.82 GiB RAM was available.
+
 **COMPUTATIONALLY VERIFIED:** Dependency-aware reduction V1 is implemented on `feat/dependency-aware-reduction` at `a17127611bd366b8ceb3ba8ce69963b3f24b24eb`. It is opt-in (`strategy="dependency"`) and oracle-backed. On the nested benchmark it reduced 200 -> 47 nonblank LOC versus the standard 200 -> 55 baseline, with identical output across jobs 1 and 4. On the large exception regression it preserved 273 -> 4 in two repeats. See `reports/DEPENDENCY_REDUCTION_V1.md`.
 
 **OBSERVED:** The nested quality improvement costs additional oracle work: 302 serial executions versus the standard 212 baseline. Dependency jobs=4 reduced one recorded wall time from 177.58s to 117.33s, but compiler/GPU contention remains **NOT CHECKED**.
