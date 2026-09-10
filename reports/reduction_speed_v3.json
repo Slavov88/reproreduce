@@ -1,0 +1,429 @@
+{
+  "answers": {
+    "best_job_count": {
+      "large_exception": 4,
+      "nested_python": 4
+    },
+    "compiler_contention": "NOT CHECKED; Inductor was not run.",
+    "extra_speculative_oracle_executions": {
+      "large_exception": {
+        "jobs_2": 25,
+        "jobs_4": 41
+      },
+      "nested_python": {
+        "jobs_2": 12,
+        "jobs_4": 17
+      }
+    },
+    "keep_feature": "YES, opt-in only; default jobs=1.",
+    "median_cancelled": {
+      "large_exception": {
+        "jobs_2": 34,
+        "jobs_4": 19
+      },
+      "nested_python": {
+        "jobs_2": 9,
+        "jobs_4": 4
+      }
+    },
+    "source_hash_identical": true,
+    "subprocess_isolation": true
+  },
+  "base_commit": "a40ed4c8f5f69eb9856a9ec462da56aee6de9347",
+  "benchmark_provenance": {
+    "implementation_commit": "d820e75b23986c7ca2e87fec573e83911e8b748c",
+    "note": "Raw benchmark commands ran from the clean-base worktree with implementation changes present; no benchmark-relevant code changed before implementation commit.",
+    "raw_records_commit": "a40ed4c8f5f69eb9856a9ec462da56aee6de9347",
+    "raw_records_worktree_dirty": true
+  },
+  "benchmark_worktree_commit": "a40ed4c8f5f69eb9856a9ec462da56aee6de9347",
+  "benchmarks": {
+    "large_exception": {
+      "jobs": [
+        {
+          "all_statuses": [
+            "COMPUTATIONALLY VERIFIED"
+          ],
+          "candidate_requests": [
+            168
+          ],
+          "candidates_cancelled": [
+            0
+          ],
+          "candidates_completed": [
+            167
+          ],
+          "candidates_submitted": [
+            167
+          ],
+          "fingerprint_preserved": true,
+          "jobs": 1,
+          "median_wall_time_seconds": 100.30405739999696,
+          "oracle_executions": [
+            167
+          ],
+          "parallel_efficiency": 1.0,
+          "peak_concurrency": 1,
+          "raw_record": "reports/parallel_v3_large_jobs1.json",
+          "reduced_nonblank_loc": [
+            4
+          ],
+          "repeats": 3,
+          "source_hashes": [
+            "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e"
+          ],
+          "speculative_executions": [
+            0
+          ],
+          "speedup": 1.0,
+          "standalone_repro_success": true,
+          "unique_source_candidates": [
+            166
+          ],
+          "useful_executions": [
+            167
+          ],
+          "wall_time_range_seconds": [
+            95.62153509999916,
+            103.16494070000044
+          ]
+        },
+        {
+          "all_statuses": [
+            "COMPUTATIONALLY VERIFIED"
+          ],
+          "candidate_requests": [
+            192,
+            193,
+            195
+          ],
+          "candidates_cancelled": [
+            32,
+            34,
+            35
+          ],
+          "candidates_completed": [
+            191,
+            192,
+            194
+          ],
+          "candidates_submitted": [
+            226
+          ],
+          "fingerprint_preserved": true,
+          "jobs": 2,
+          "median_wall_time_seconds": 73.05059710000205,
+          "oracle_executions": [
+            191,
+            192,
+            194
+          ],
+          "parallel_efficiency": 0.686538244599743,
+          "peak_concurrency": 2,
+          "raw_record": "reports/parallel_v3_large_jobs2.json",
+          "reduced_nonblank_loc": [
+            4
+          ],
+          "repeats": 3,
+          "source_hashes": [
+            "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e"
+          ],
+          "speculative_executions": [
+            24,
+            25,
+            27
+          ],
+          "speedup": 1.373076489199486,
+          "standalone_repro_success": true,
+          "unique_source_candidates": [
+            225
+          ],
+          "useful_executions": [
+            167
+          ],
+          "wall_time_range_seconds": [
+            63.88967499999853,
+            101.12245570000232
+          ]
+        },
+        {
+          "all_statuses": [
+            "COMPUTATIONALLY VERIFIED"
+          ],
+          "candidate_requests": [
+            208,
+            209
+          ],
+          "candidates_cancelled": [
+            18,
+            19
+          ],
+          "candidates_completed": [
+            207,
+            208
+          ],
+          "candidates_submitted": [
+            226
+          ],
+          "fingerprint_preserved": true,
+          "jobs": 4,
+          "median_wall_time_seconds": 59.808263899998565,
+          "oracle_executions": [
+            207,
+            208
+          ],
+          "parallel_efficiency": 0.4192734032863282,
+          "peak_concurrency": 4,
+          "raw_record": "reports/parallel_v3_large_jobs4.json",
+          "reduced_nonblank_loc": [
+            4
+          ],
+          "repeats": 3,
+          "source_hashes": [
+            "776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e"
+          ],
+          "speculative_executions": [
+            40,
+            41
+          ],
+          "speedup": 1.6770936131453127,
+          "standalone_repro_success": true,
+          "unique_source_candidates": [
+            225
+          ],
+          "useful_executions": [
+            167
+          ],
+          "wall_time_range_seconds": [
+            58.31473370000458,
+            69.24472049999895
+          ]
+        }
+      ]
+    },
+    "nested_python": {
+      "jobs": [
+        {
+          "all_statuses": [
+            "COMPUTATIONALLY VERIFIED"
+          ],
+          "candidate_requests": [
+            213
+          ],
+          "candidates_cancelled": [
+            0
+          ],
+          "candidates_completed": [
+            212
+          ],
+          "candidates_submitted": [
+            212
+          ],
+          "fingerprint_preserved": true,
+          "jobs": 1,
+          "median_wall_time_seconds": 123.15897150000092,
+          "oracle_executions": [
+            212
+          ],
+          "parallel_efficiency": 1.0,
+          "peak_concurrency": 1,
+          "raw_record": "reports/parallel_v3_nested_jobs1.json",
+          "reduced_nonblank_loc": [
+            55
+          ],
+          "repeats": 3,
+          "source_hashes": [
+            "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c"
+          ],
+          "speculative_executions": [
+            0
+          ],
+          "speedup": 1.0,
+          "standalone_repro_success": true,
+          "unique_source_candidates": [
+            211
+          ],
+          "useful_executions": [
+            212
+          ],
+          "wall_time_range_seconds": [
+            120.29988480000611,
+            124.88652580000053
+          ]
+        },
+        {
+          "all_statuses": [
+            "COMPUTATIONALLY VERIFIED"
+          ],
+          "candidate_requests": [
+            224,
+            225
+          ],
+          "candidates_cancelled": [
+            8,
+            9
+          ],
+          "candidates_completed": [
+            223,
+            224
+          ],
+          "candidates_submitted": [
+            232
+          ],
+          "fingerprint_preserved": true,
+          "jobs": 2,
+          "median_wall_time_seconds": 79.66532020000159,
+          "oracle_executions": [
+            223,
+            224
+          ],
+          "parallel_efficiency": 0.772977320563123,
+          "peak_concurrency": 2,
+          "raw_record": "reports/parallel_v3_nested_jobs2.json",
+          "reduced_nonblank_loc": [
+            55
+          ],
+          "repeats": 3,
+          "source_hashes": [
+            "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c"
+          ],
+          "speculative_executions": [
+            11,
+            12
+          ],
+          "speedup": 1.545954641126246,
+          "standalone_repro_success": true,
+          "unique_source_candidates": [
+            231
+          ],
+          "useful_executions": [
+            212
+          ],
+          "wall_time_range_seconds": [
+            76.24426859999949,
+            79.92156129999785
+          ]
+        },
+        {
+          "all_statuses": [
+            "COMPUTATIONALLY VERIFIED"
+          ],
+          "candidate_requests": [
+            228,
+            230
+          ],
+          "candidates_cancelled": [
+            3,
+            5
+          ],
+          "candidates_completed": [
+            227,
+            229
+          ],
+          "candidates_submitted": [
+            232
+          ],
+          "fingerprint_preserved": true,
+          "jobs": 4,
+          "median_wall_time_seconds": 67.2353265999991,
+          "oracle_executions": [
+            227,
+            229
+          ],
+          "parallel_efficiency": 0.45793996150530547,
+          "peak_concurrency": 4,
+          "raw_record": "reports/parallel_v3_nested_jobs4.json",
+          "reduced_nonblank_loc": [
+            55
+          ],
+          "repeats": 3,
+          "source_hashes": [
+            "bedc12d08f47bd486d579f002cc879c730c18e641271333be5c332663cf7c39c"
+          ],
+          "speculative_executions": [
+            15,
+            17
+          ],
+          "speedup": 1.8317598460212219,
+          "standalone_repro_success": true,
+          "unique_source_candidates": [
+            231
+          ],
+          "useful_executions": [
+            212
+          ],
+          "wall_time_range_seconds": [
+            65.35370870000042,
+            68.03888249999727
+          ]
+        }
+      ]
+    }
+  },
+  "branch": "feat/parallel-reduction",
+  "design": {
+    "acceptance": "earliest preserving candidate in serial order, independent of completion order",
+    "cache_commit": "central serial session commit",
+    "candidate_execution": "fresh subprocess per candidate",
+    "candidate_unit": "same-parent ddmin partition complements",
+    "default_jobs": 1,
+    "tested_jobs": [
+      1,
+      2,
+      4
+    ]
+  },
+  "environment": {
+    "cpu_count": 16,
+    "disk_free_gib_at_inductor_decision": 46.4,
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "ram_available_gib_at_inductor_decision": 3.2,
+    "ram_total_gib": 15.4,
+    "torch": "2.5.1+cu121"
+  },
+  "implementation_commit": "d820e75b23986c7ca2e87fec573e83911e8b748c",
+  "inductor": {
+    "preserved_baseline": {
+      "candidate_execution_seconds": 574.64,
+      "oracle_executions": 78,
+      "reduced_loc": "152 -> 28",
+      "wall_time_seconds": 577.84
+    },
+    "reason": "Only 3.2 GiB RAM was available; compiler contention risk was not justified.",
+    "status": "NOT TESTED"
+  },
+  "metric_definitions": {
+    "candidate_request": "evaluation-layer request after scheduler filtering",
+    "candidates_cancelled": "submitted tasks cancelled before starting",
+    "candidates_completed": "submitted candidate tasks that completed and were centrally committed",
+    "candidates_submitted": "uncached candidate subprocess tasks submitted to the bounded executor",
+    "memory_cache_hit": "in-process memoization result",
+    "no_op_skip": "transformation proven unchanged",
+    "oracle_execution": "fresh subprocess/oracle execution, including baseline execution",
+    "peak_concurrency": "maximum simultaneously running candidate tasks",
+    "scheduler_duplicate_skip": "exact source skipped before session evaluation",
+    "speculative_execution": "completed candidate execution after the earliest serial-order success",
+    "sqlite_cache_hit": "persistent SQLite cache result",
+    "structural_state_skip": "canonical state skipped before source generation",
+    "unique_source_candidate": "unique source SHA-256 encountered by the scheduler",
+    "useful_execution": "completed execution that serial search would have needed"
+  },
+  "quality_gate": {
+    "fingerprints_preserved": true,
+    "identical_source_hashes_across_jobs": true,
+    "large_exception": "273 -> 4",
+    "nested_python": "200 -> 55",
+    "standalone_reproducers_succeeded": true
+  },
+  "raw_records": [
+    "reports/parallel_v3_large_jobs1.json",
+    "reports/parallel_v3_large_jobs2.json",
+    "reports/parallel_v3_large_jobs4.json",
+    "reports/parallel_v3_nested_jobs1.json",
+    "reports/parallel_v3_nested_jobs2.json",
+    "reports/parallel_v3_nested_jobs4.json"
+  ],
+  "schema_version": 3,
+  "status": "COMPUTATIONALLY VERIFIED / OBSERVED"
+}

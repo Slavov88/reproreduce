@@ -33,6 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
     reduce_parser.add_argument("--exception-type")
     reduce_parser.add_argument("--message")
     reduce_parser.add_argument("--timeout", type=float, default=30.0)
+    reduce_parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="bounded concurrent candidate evaluations; 1 preserves serial behavior",
+    )
     reduce_parser.add_argument("--output", default="repro")
     reduce_parser.add_argument("--cache")
     hunt_parser = commands.add_parser(
@@ -80,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
                 oracle=oracle,
                 timeout=args.timeout,
                 cache=args.cache,
+                jobs=args.jobs,
             )
             output = result.export(args.output)
         except (OSError, ValueError, RuntimeError) as error:

@@ -1,5 +1,6 @@
 import unittest
 
+from reproreduce import reduce
 from reproreduce.core.session import _SessionCandidateTest
 from reproreduce.reduce.ddmin import ddmin
 from reproreduce.reduce.scheduler import invoke_test
@@ -18,6 +19,10 @@ class SearchSchedulerTests(unittest.TestCase):
         self.assertEqual(reduced, [0])
         self.assertTrue(attempts)
         self.assertGreaterEqual(attempts[0][2], 2)
+
+    def test_jobs_must_be_positive(self):
+        with self.assertRaises(ValueError):
+            reduce("does-not-exist.py", jobs=0)
 
     def test_scheduler_reuses_duplicate_outcome_before_session_evaluation(self):
         class FakeSession:
@@ -41,6 +46,17 @@ class SearchSchedulerTests(unittest.TestCase):
         self.assertEqual(session.evaluations, 1)
         self.assertEqual(session.skips, 1)
         self.assertEqual(session._scheduler_requests, 2)
+
+    def test_ddmin_batch_chooses_earliest_success_in_serial_order(self):
+        seen = []
+
+        def evaluate_batch(candidates):
+            seen.extend(candidates)
+            return [candidate == [0, 1] for candidate in candidates]
+
+        reduced = ddmin([0, 1, 2, 3], lambda candidate: False, test_batch=evaluate_batch)
+        self.assertEqual(reduced, [0, 1])
+        self.assertEqual(seen[:2], [[2, 3], [0, 1]])
 
     def test_ddmin_reuses_known_attempt_without_calling_test(self):
         tested = []
