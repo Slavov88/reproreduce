@@ -88,6 +88,7 @@ def _reduce_statement_list(
     current = list(getattr(owner, field))
     scope = _scope_name(owner, field)
     attempt_context: dict[str, object] = {}
+    pending_contexts: list[dict[str, object]] = []
     trace_enabled = bool(getattr(getattr(test, "session", None), "trace", False))
 
     def metadata_for(
@@ -162,8 +163,113 @@ def _reduce_statement_list(
     def on_attempt(
         parent: list[ast.stmt], candidate: list[ast.stmt], granularity: int
     ) -> None:
+        metadata = metadata_for(parent, candidate, granularity)
         attempt_context.clear()
-        attempt_context.update(metadata_for(parent, candidate, granularity))
+        attempt_context.update(metadata)
+        pending_contexts.append(metadata)
+
+    def parallel_candidate_batch(candidates: list[list[ast.stmt]]) -> list[bool]:
+        nonlocal current
+        parent = list(current)
+        contexts = pending_contexts[: len(candidates)]
+        del pending_contexts[: len(candidates)]
+        contexts.extend({} for _ in range(len(candidates) - len(contexts)))
+        outcomes: list[bool | None] = [None] * len(candidates)
+        keys: list[str] = []
+        sources: list[str] = []
+        source_indices: list[int] = []
+        source_contexts: list[dict[str, object]] = []
+
+        for index, candidate in enumerate(candidates):
+            key = state_key(candidate)
+            keys.append(key)
+            if key in state_outcomes:
+                outcomes[index] = state_outcomes[key]
+                record_state_skip(parent, candidate, int(contexts[index].get("granularity", 2)), outcomes[index])
+                continue
+            reuse = getattr(test, "reuse_structural_state", None)
+            if callable(reuse):
+                reused = reuse(
+                    key,
+                    {
+                        **contexts[index],
+                        "candidate_state_sha256": hashlib.sha256(key.encode("utf-8")).hexdigest(),
+                    },
+                )
+                if reused is not None:
+                    outcomes[index] = reused
+                    continue
+            if (
+                tuple(_statement_id(item) for item in candidate)
+                == tuple(_statement_id(item) for item in current)
+                and len(_repair_block(owner, field, list(candidate))) == len(candidate)
+            ):
+                outcomes[index] = True
+                state_outcomes[key] = True
+                remember = getattr(test, "remember_structural_state", None)
+                if callable(remember):
+                    remember(key, True)
+                recorder = getattr(test, "_record_no_op", None)
+                if callable(recorder):
+                    recorder({
+                        **contexts[index],
+                        "candidate_state_sha256": hashlib.sha256(key.encode("utf-8")).hexdigest(),
+                    })
+                continue
+            setattr(owner, field, _repair_block(owner, field, list(candidate)))
+            try:
+                candidate_source = render_module(tree.body)
+                compile(candidate_source, str(getattr(tree, "filename", "<reproreduce>")), "exec")
+            except (SyntaxError, ValueError):
+                recorder = getattr(test, "_record_syntax_skip", None)
+                if callable(recorder):
+                    recorder(dict(contexts[index]))
+                outcomes[index] = False
+                state_outcomes[key] = False
+                remember = getattr(test, "remember_structural_state", None)
+                if callable(remember):
+                    remember(key, False)
+                continue
+            finally:
+                setattr(owner, field, _repair_block(owner, field, list(parent)))
+            metadata = dict(contexts[index])
+            metadata["candidate_source_sha256"] = hashlib.sha256(candidate_source.encode("utf-8")).hexdigest()
+            sources.append(candidate_source)
+            source_indices.append(index)
+            source_contexts.append(metadata)
+
+        if sources:
+            batch_evaluator = getattr(test, "evaluate_batch", None)
+            if callable(batch_evaluator):
+                evaluated = batch_evaluator(sources, source_contexts)
+            else:
+                evaluated = [invoke_test(test, source, metadata=metadata) for source, metadata in zip(sources, source_contexts)]
+            if len(evaluated) != len(sources):
+                raise ValueError("evaluate_batch returned the wrong number of outcomes")
+            for index, accepted in zip(source_indices, evaluated):
+                outcomes[index] = accepted
+                state_outcomes[keys[index]] = accepted
+                remember = getattr(test, "remember_structural_state", None)
+                if callable(remember):
+                    remember(keys[index], accepted)
+
+        final_outcomes = [bool(outcome) for outcome in outcomes]
+        for candidate, accepted in zip(candidates, final_outcomes):
+            if accepted:
+                setattr(owner, field, _repair_block(owner, field, list(candidate)))
+                current = list(candidate)
+                history.append(
+                    {
+                        "transform": "RemoveStatements",
+                        "scope": scope,
+                        "removed_count": len(parent) - len(candidate),
+                        "remaining_statements": len(candidate),
+                    }
+                )
+                break
+        else:
+            setattr(owner, field, _repair_block(owner, field, parent))
+        return final_outcomes
 
     def candidate_test(candidate: list[ast.stmt]) -> bool:
         nonlocal current
@@ -218,11 +324,13 @@ def _reduce_statement_list(
         setattr(owner, field, _repair_block(owner, field, current))
         return False
 
+    parallel_enabled = int(getattr(test, "jobs", 1)) > 1
     reduced = ddmin(
         current,
         candidate_test,
         on_attempt=on_attempt,
-        reuse_attempt=reuse_attempt,
+        reuse_attempt=None if parallel_enabled else reuse_attempt,
+        test_batch=parallel_candidate_batch if parallel_enabled else None,
     )
     # Classic ddmin stops when one item remains. Try the empty set explicitly so
     # required blocks can be repaired with ``pass`` when their contents are

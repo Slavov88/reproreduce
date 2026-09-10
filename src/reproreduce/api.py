@@ -15,6 +15,7 @@ def reduce(
     trace: bool = False,
     deduplicate: bool = True,
     structural_deduplicate: bool = True,
+    jobs: int = 1,
 ) -> ReductionResult:
     """Reduce a Python program while preserving its baseline failure."""
     selected_oracle = oracle or ExceptionOracle()
@@ -26,5 +27,6 @@ def reduce(
         trace=trace,
         deduplicate=deduplicate,
         structural_deduplicate=structural_deduplicate,
+        jobs=jobs,
     )
     return session.reduce()

@@ -187,6 +187,7 @@ def run_one(
     trace: bool = False,
     deduplicate: bool = True,
     structural_deduplicate: bool = True,
+    jobs: int = 1,
 ) -> dict[str, object]:
     source_path = root / "benchmarks" / "large_reduction_v1" / spec.filename
     source = source_path.read_text(encoding="utf-8")
@@ -210,6 +211,7 @@ def run_one(
         "timeout_seconds": timeout,
         "scheduler_deduplicate": deduplicate,
         "structural_state_deduplicate": structural_deduplicate,
+        "jobs": jobs,
         "termination_normal": False,
         "export_success": False,
         "standalone_repro_success": False,
@@ -239,6 +241,7 @@ def run_one(
             trace=trace,
             deduplicate=deduplicate,
             structural_deduplicate=structural_deduplicate,
+            jobs=jobs,
         )
     except Exception as error:  # benchmark records must preserve failures for later diagnosis
         record.update(
@@ -295,6 +298,13 @@ def run_one(
         "skipped_structural_states",
         "no_op_skips",
         "syntax_skips",
+        "jobs",
+        "candidates_submitted",
+        "candidates_completed",
+        "candidates_cancelled",
+        "speculative_executions",
+        "useful_executions",
+        "peak_concurrency",
     }
     record.update(
         {
@@ -315,6 +325,13 @@ def run_one(
             "skipped_structural_states": result.metrics.get("skipped_structural_states", 0),
             "no_op_skips": result.metrics.get("no_op_skips", 0),
             "syntax_skips": result.metrics.get("syntax_skips", 0),
+            "jobs": result.metrics.get("jobs", jobs),
+            "candidates_submitted": result.metrics.get("candidates_submitted", 0),
+            "candidates_completed": result.metrics.get("candidates_completed", 0),
+            "candidates_cancelled": result.metrics.get("candidates_cancelled", 0),
+            "speculative_executions": result.metrics.get("speculative_executions", 0),
+            "useful_executions": result.metrics.get("useful_executions", 0),
+            "peak_concurrency": result.metrics.get("peak_concurrency", 1),
             "unique_candidate_sources": result.metrics.get("unique_candidate_sources", candidate_runs),
             "duplicate_candidate_sources": result.metrics.get("duplicate_candidate_sources", 0),
             "profiling": {key: result.metrics.get(key, 0.0) for key in sorted(profile_keys)},
@@ -376,6 +393,7 @@ def run_benchmarks(
     trace: bool = False,
     deduplicate: bool = True,
     structural_deduplicate: bool = True,
+    jobs: int = 1,
 ) -> dict[str, object]:
     selected = [spec for spec in SPECS if names is None or spec.name in names]
     unknown = sorted(set(names or ()) - {spec.name for spec in SPECS})
@@ -395,6 +413,7 @@ def run_benchmarks(
             trace=trace,
             deduplicate=deduplicate,
             structural_deduplicate=structural_deduplicate,
+            jobs=jobs,
         )
         for spec in selected
         for repeat in range(1, repeats + 1)
@@ -407,6 +426,7 @@ def run_benchmarks(
         "command": "python -m reproreduce.bench",
         "scheduler_deduplicate": deduplicate,
         "structural_state_deduplicate": structural_deduplicate,
+        "jobs": jobs,
         "trace_enabled": trace,
         "environment": _environment(),
         "benchmarks": [asdict(spec) for spec in selected],
@@ -434,6 +454,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--benchmark", action="append", dest="names", choices=[spec.name for spec in SPECS])
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--timeout", type=float, default=30.0)
+    parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--root", type=Path, default=_repo_root())
     parser.add_argument("--workspace", type=Path)
     parser.add_argument("--trace", action="store_true", help="record reducer search trace events")
@@ -463,6 +484,7 @@ def main(argv: list[str] | None = None) -> int:
         trace=args.trace,
         deduplicate=not args.no_deduplicate,
         structural_deduplicate=not args.no_structural_state_deduplicate,
+        jobs=args.jobs,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
