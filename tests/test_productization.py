@@ -12,6 +12,8 @@ class ProductizationTests(unittest.TestCase):
         self.assertTrue(callable(reproreduce.reduce))
         args = build_parser().parse_args(["summarize", "campaign.json"])
         self.assertEqual(args.command, "summarize")
+        reduce_args = build_parser().parse_args(["reduce", "program.py", "--strategy", "dependency"])
+        self.assertEqual(reduce_args.strategy, "dependency")
 
     def test_flagship_fixture_is_tracked_and_parseable(self):
         root = Path(__file__).parents[1]
