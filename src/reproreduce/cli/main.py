@@ -30,6 +30,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     reduce_parser.add_argument("program")
     reduce_parser.add_argument("--oracle", choices=["exception"], default="exception")
+    reduce_parser.add_argument(
+        "--strategy",
+        choices=["standard", "dependency"],
+        default="standard",
+        help="candidate strategy; dependency remains oracle-validated and opt-in",
+    )
     reduce_parser.add_argument("--exception-type")
     reduce_parser.add_argument("--message")
     reduce_parser.add_argument("--timeout", type=float, default=30.0)
@@ -87,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
                 timeout=args.timeout,
                 cache=args.cache,
                 jobs=args.jobs,
+                strategy=args.strategy,
             )
             output = result.export(args.output)
         except (OSError, ValueError, RuntimeError) as error:

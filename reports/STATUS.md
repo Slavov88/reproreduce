@@ -2,6 +2,10 @@
 
 ## Current frontier
 
+**COMPUTATIONALLY VERIFIED:** Dependency-aware reduction V1 is implemented on `feat/dependency-aware-reduction` at `a17127611bd366b8ceb3ba8ce69963b3f24b24eb`. It is opt-in (`strategy="dependency"`) and oracle-backed. On the nested benchmark it reduced 200 -> 47 nonblank LOC versus the standard 200 -> 55 baseline, with identical output across jobs 1 and 4. On the large exception regression it preserved 273 -> 4 in two repeats. See `reports/DEPENDENCY_REDUCTION_V1.md`.
+
+**OBSERVED:** The nested quality improvement costs additional oracle work: 302 serial executions versus the standard 212 baseline. Dependency jobs=4 reduced one recorded wall time from 177.58s to 117.33s, but compiler/GPU contention remains **NOT CHECKED**.
+
 **OBSERVED:** `feat/reducer-search-speed` adds search traces and generic exact-source scheduler deduplication. It is a performance milestone, not a new bug-hunting campaign.
 
 **COMPUTATIONALLY VERIFIED:** pass 2 reduced evaluation-layer requests from 186 -> 168 for large exception and 390 -> 213 for nested Python, while fresh oracle executions remained 167 and 212 respectively. Reduced-source hashes, fingerprints, standalone reproducers, and first-occurrence oracle order were unchanged.
@@ -23,6 +27,10 @@ The v1 large-input benchmark suite remains the evidence base: synthetic exceptio
 The earlier hunt infrastructure remains available: deterministic generic, structured broadcasting, dynamic-shape, storage-alias/mutation, and compiler-failure triage workflows. Dynamic cases compile one callable with `dynamic=True` and reuse it over a four-shape trace. Alias cases validate storage relationships and compare returned observables plus post-mutation state.
 
 ## Confirmed results
+
+- **COMPUTATIONALLY VERIFIED:** Dependency V1 preserved `REPROREDUCE_NESTED_TARGET` and `REPROREDUCE_LARGE_TARGET` in fresh standalone subprocesses. Nested output hash: `fed7647cc51583d7d4ac7429bc2c71efd3feb129b70041de8e6ac245bd13a214`; large-exception output hash remains `776c1b47de79a096437e1b9296cda2bbc7f9ea64f0a993170f1bf7049d26150e`.
+- **COMPUTATIONALLY VERIFIED:** The full local suite passed **119 tests and 380 subtests** after the dependency implementation.
+- **OBSERVED:** V1's static analysis is proposal/order machinery only; all accepted candidates passed the normal failure oracle. No minimality or universal semantic-safety claim is made.
 
 - **COMPUTATIONALLY VERIFIED:** the pre-change baseline passed **78 tests** at commit `520d1cf`; the final dynamic-shape implementation passed **87 tests**.
 - **COMPUTATIONALLY VERIFIED:** the dynamic-shape campaign completed **400 cases** and **1,600 shape executions**: 200 forward cases and 200 gradient cases.
@@ -83,4 +91,4 @@ Environment: WSL2 Ubuntu, Python 3.12.3, PyTorch 2.5.1+cu124, CUDA 12.4, Triton 
 
 ## Next highest-value experiment
 
-Stop this triage milestone. Do not begin another broad campaign. A later targeted regression check may compare the minimized view/index-fill reproducer on a current CUDA nightly, with explicit approval.
+Keep Dependency V1 opt-in and do not redesign the scheduler. The next useful check is a separately resourced, isolated ablation of dependency components versus expression candidates; historical Inductor and GPU parallel runs remain deferred until adequate resource controls are available.

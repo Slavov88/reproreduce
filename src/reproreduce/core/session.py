@@ -14,6 +14,7 @@ from .cache import CandidateCache
 from .result import ReductionResult
 from .run import RunResult
 from ..reduce.ast import reduce_top_level_statements
+from ..reduce.dependency import reduce_dependency
 from ..pytorch.modules import reduce_module_lists, reduce_sequential_modules
 from ..pytorch.tensors import reduce_tensor_constructors
 
@@ -128,9 +129,12 @@ class ReductionSession:
         deduplicate: bool = True,
         structural_deduplicate: bool = True,
         jobs: int = 1,
+        strategy: str = "standard",
     ):
         if jobs < 1:
             raise ValueError("jobs must be at least 1")
+        if strategy not in {"standard", "dependency"}:
+            raise ValueError("strategy must be 'standard' or 'dependency'")
         self.program = program.resolve()
         self.oracle = oracle
         self.timeout = timeout
@@ -140,6 +144,24 @@ class ReductionSession:
         self.deduplicate = deduplicate
         self.structural_deduplicate = structural_deduplicate
         self.jobs = jobs
+        self.strategy = strategy
+        self._dependency_metrics: dict[str, int] = {
+            "dependency_candidates": 0,
+            "dependency_components": 0,
+            "dependency_component_candidates": 0,
+            "unused_definition_candidates": 0,
+            "unused_assignment_candidates": 0,
+            "unused_import_candidates": 0,
+            "import_alias_candidates": 0,
+            "parameter_candidates": 0,
+            "expression_candidates": 0,
+            "dependency_accepted_dependency_component": 0,
+            "dependency_accepted_unused_definition": 0,
+            "dependency_accepted_unused_assignment": 0,
+            "dependency_accepted_unused_import": 0,
+            "dependency_accepted_import_alias": 0,
+            "dependency_accepted_expression": 0,
+        }
         self._baseline: OracleResult | None = None
         self._evaluations = 0
         self._history: list[dict[str, object]] = []
@@ -262,6 +284,29 @@ class ReductionSession:
                     "reason": "skipped_structural_state",
                 }
             )
+
+    def _record_dependency_analysis(self, analysis) -> None:
+        self._dependency_metrics["dependency_components"] = max(
+            self._dependency_metrics["dependency_components"],
+            int(getattr(analysis, "component_count", 0)),
+        )
+
+    def _record_dependency_candidate(self, category: str, accepted: bool) -> None:
+        self._dependency_metrics["dependency_candidates"] += 1
+        category_key = {
+            "dependency_component": "dependency_component_candidates",
+            "unused_definition": "unused_definition_candidates",
+            "unused_assignment": "unused_assignment_candidates",
+            "unused_import": "unused_import_candidates",
+            "import_alias": "import_alias_candidates",
+            "expression": "expression_candidates",
+        }.get(category)
+        if category_key is not None:
+            self._dependency_metrics[category_key] += 1
+        if accepted:
+            accepted_key = f"dependency_accepted_{category}"
+            if accepted_key in self._dependency_metrics:
+                self._dependency_metrics[accepted_key] += 1
 
     def _record_syntax_skip(self, context: dict[str, object]) -> None:
         self._syntax_skips += 1
@@ -534,6 +579,16 @@ class ReductionSession:
             for _ in range(MAX_REDUCTION_PASSES):
                 before = reduced_source
 
+                if self.strategy == "dependency":
+                    reduced_source, dependency_history = reduce_dependency(
+                        reduced_source,
+                        candidate_test,
+                        [],
+                        self._record_dependency_candidate,
+                        record_analysis=self._record_dependency_analysis,
+                    )
+                    self._history.extend(dependency_history)
+
                 reduced_source, ast_history = reduce_top_level_statements(
                     reduced_source, candidate_test
                 )
@@ -554,6 +609,16 @@ class ReductionSession:
                     reduced_source, candidate_test
                 )
                 self._history.extend(cleanup_history)
+
+                if self.strategy == "dependency":
+                    reduced_source, dependency_history = reduce_dependency(
+                        reduced_source,
+                        candidate_test,
+                        [],
+                        self._record_dependency_candidate,
+                        record_analysis=self._record_dependency_analysis,
+                    )
+                    self._history.extend(dependency_history)
 
                 if reduced_source == before:
                     break
@@ -632,4 +697,6 @@ class ReductionSession:
             "speculative_executions": self._speculative_executions,
             "useful_executions": self._useful_executions,
             "peak_concurrency": max(self._peak_concurrency, 1),
+            "strategy": self.strategy,
+            **self._dependency_metrics,
         }

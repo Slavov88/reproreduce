@@ -16,8 +16,13 @@ def reduce(
     deduplicate: bool = True,
     structural_deduplicate: bool = True,
     jobs: int = 1,
+    strategy: str = "standard",
 ) -> ReductionResult:
-    """Reduce a Python program while preserving its baseline failure."""
+    """Reduce a Python program while preserving its baseline failure.
+
+    ``strategy="dependency"`` enables conservative static candidate proposals;
+    every accepted proposal is still checked by the configured oracle.
+    """
     selected_oracle = oracle or ExceptionOracle()
     session = ReductionSession(
         program=Path(program),
@@ -28,5 +33,6 @@ def reduce(
         deduplicate=deduplicate,
         structural_deduplicate=structural_deduplicate,
         jobs=jobs,
+        strategy=strategy,
     )
     return session.reduce()
