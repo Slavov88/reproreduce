@@ -25,6 +25,8 @@
     "torch": "2.5.1+cu121",
     "torch_cuda": "12.1",
     "cuda_available": true,
+    "torch_compile": true,
+    "torch_inductor_import": true,
     "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
     "gpu_memory_total_mib": 4096,
     "gpu_memory_free_mib": 3964,

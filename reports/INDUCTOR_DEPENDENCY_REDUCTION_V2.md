@@ -18,6 +18,8 @@ PR #9 was green and mergeable and was merged normally into `main` at `696af47`. 
 | PyTorch | 2.5.1+cu121 |
 | PyTorch CUDA build | 12.1 |
 | CUDA available | yes |
+| `torch.compile` | available |
+| `torch._inductor` import | available |
 | GPU | NVIDIA GeForce RTX 3050 Laptop GPU |
 | GPU memory | 4096 MiB total, 3964 MiB free at check |
 | NVIDIA driver | 566.07 |
@@ -31,7 +33,7 @@ PR #9 was green and mergeable and was merged normally into `main` at `696af47`. 
 | Disk free | 43.39 GiB |
 | CPUs | 16 logical CPUs |
 
-The tracked historical fixture uses the Windows Python/PyTorch environment that previously required a 577.84-second warm-cache reduction and a cold-start timeout. Windows available RAM was only 0.91 GiB, below the previously blocked 1.82 GiB state.
+The tracked historical fixture uses the Windows Python/PyTorch environment that previously required a 577.84-second warm-cache reduction and a cold-start timeout. `torch.compile` and `torch._inductor` import successfully, but Windows available RAM was only 0.91 GiB, below the previously blocked 1.82 GiB state.
 
 ## RESOURCE CHECK
 
