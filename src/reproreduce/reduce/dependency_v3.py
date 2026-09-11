@@ -148,13 +148,33 @@ def _config_candidates(source: str) -> list[V3Candidate]:
         return []
     parents = _parents(tree)
     bindings = _function_model_bindings(tree, models)
+    local_function_names = {node.name for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    blocked: set[tuple[NodeKey, str]] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Name) or node.id not in {name for values in bindings.values() for name in values}:
+            continue
+        function = _nearest_function(parents, node)
+        field_map = bindings.get(_key(function), {}).get(node.id) if function is not None else None
+        if field_map is None:
+            continue
+        parent = parents.get(node)
+        if isinstance(node.ctx, ast.Store) and not (isinstance(parent, ast.Assign) and parent.value is not node):
+            blocked.add((_key(function), node.id))
+        if isinstance(parent, ast.Attribute) and parent.value is node and isinstance(node.ctx, ast.Load):
+            if isinstance(parent.ctx, ast.Store):
+                blocked.add((_key(function), node.id))
+            continue
+        if isinstance(parent, ast.Call) and node in parent.args and isinstance(parent.func, ast.Name) and parent.func.id in local_function_names:
+            continue
+        if isinstance(parent, ast.Call) or isinstance(parent, ast.Return):
+            blocked.add((_key(function), node.id))
     output: list[V3Candidate] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Attribute) or not isinstance(node.value, ast.Name):
             continue
         function = _nearest_function(parents, node)
         field_map = bindings.get(_key(function), {}).get(node.value.id) if function is not None else None
-        if field_map is None:
+        if field_map is None or (_key(function), node.value.id) in blocked:
             continue
         replacement = field_map.get(node.attr)
         if replacement is not None:

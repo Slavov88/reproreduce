@@ -164,6 +164,49 @@ main()
     assert _wrapper_candidates(source)
 
 
+def test_v3_alias_and_constant_candidates_propagate_only_single_uses() -> None:
+    alias_source = "x = y\nraise RuntimeError(x)\n"
+    alias = _assignment_candidates(alias_source)
+    assert any(candidate.phase == "alias" for candidate in alias)
+    assert "raise RuntimeError(y)" in apply_v3_candidate(alias_source, alias[0])
+
+    unsafe_source = "x = y\nprint(x)\nprint(x)\n"
+    assert not _assignment_candidates(unsafe_source)
+
+    constant_source = "value = 4\nraise RuntimeError(value)\n"
+    constants = _assignment_candidates(constant_source)
+    assert any(candidate.phase == "constant" for candidate in constants)
+    assert "raise RuntimeError(4)" in apply_v3_candidate(constant_source, constants[0])
+
+
+def test_v3_rejects_mutated_and_escaped_config_objects() -> None:
+    mutation = """
+from dataclasses import dataclass
+@dataclass
+class Config:
+    value: int = 2
+
+def run(config):
+    config.value = 3
+    return config.value
+run(Config())
+"""
+    assert not _config_candidates(mutation)
+
+    escaped = """
+from dataclasses import dataclass
+@dataclass
+class Config:
+    value: int = 2
+
+def run(config):
+    sink(config)
+    return config.value
+run(Config())
+"""
+    assert not _config_candidates(escaped)
+
+
 def test_v3_strategy_is_exposed() -> None:
     from reproreduce.cli.main import build_parser
 

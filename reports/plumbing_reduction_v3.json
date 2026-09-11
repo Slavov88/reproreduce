@@ -1,0 +1,92 @@
+{
+  "status": "COMPUTATIONALLY VERIFIED",
+  "classification": "VERIFIED_HAND_CORE_LEVEL",
+  "commit": "c96d2f2a3414461ab8164e7dcf33038fdc0336be",
+  "strategy": "dependency_v3",
+  "jobs": 1,
+  "oracle_policy": "Every accepted candidate was evaluated by the original configured failure oracle.",
+  "full_suite": {"status": "COMPUTATIONALLY VERIFIED", "tests": 125, "subtests": 380, "wall_time_seconds": 669.56},
+  "benchmarks": {
+    "historical_inductor": {
+      "original_nonblank_loc": 152,
+      "v2_nonblank_loc": 22,
+      "v3_nonblank_loc": 12,
+      "v2_oracle_runs": 399,
+      "v3_oracle_runs": 325,
+      "v2_time_seconds": 2184.732,
+      "v3_time_seconds": 1632.187,
+      "v3_source_sha256": "733d8bd4b7bc7ecabb36806da2fdf1f991db4a0a580d4a46aa3e2873fff59f30",
+      "fingerprint": "AssertionError + _call_user_compiler + n=copy_",
+      "fingerprint_preserved": true,
+      "standalone_repetitions": 5,
+      "standalone_target_matches": 5
+    },
+    "nested_python": {
+      "original_nonblank_loc": 200,
+      "v2_nonblank_loc": 5,
+      "v3_nonblank_loc": 1,
+      "v2_oracle_runs": 135,
+      "v3_oracle_runs": 149,
+      "v2_time_seconds": 79.54,
+      "v3_time_seconds": 91.862,
+      "fingerprint": "RuntimeError: REPROREDUCE_NESTED_TARGET",
+      "fingerprint_preserved": true
+    },
+    "large_exception": {
+      "original_nonblank_loc": 273,
+      "v2_nonblank_loc": 3,
+      "v3_nonblank_loc": 1,
+      "v2_oracle_runs": 98,
+      "v3_oracle_runs": 104,
+      "v2_time_seconds": 54.44,
+      "v3_time_seconds": 65.328,
+      "fingerprint": "RuntimeError: REPROREDUCE_LARGE_TARGET",
+      "fingerprint_preserved": true
+    },
+    "generated_pytorch": {
+      "original_nonblank_loc": 331,
+      "v2_nonblank_loc": 3,
+      "v3_nonblank_loc": 1,
+      "v2_oracle_runs": 109,
+      "v3_oracle_runs": 115,
+      "v2_time_seconds": 387.135,
+      "v3_time_seconds": 374.535,
+      "fingerprint": "RuntimeError: REPROREDUCE_GENERATED_TORCH_TARGET",
+      "fingerprint_preserved": true
+    }
+  },
+  "historical_inductor_phase_ablation": [
+    {"family": "parameter/call coordination", "oracle_runs": 2, "accepted": 2, "direct_loc_removed": 0, "eventually_enabled_loc_removal": "yes; signature/call cleanup exposed later dead plumbing"},
+    {"family": "config/attribute propagation", "oracle_runs": 3, "accepted": 3, "direct_loc_removed": 0, "eventually_enabled_loc_removal": "yes; config class/import cleanup followed"},
+    {"family": "alias propagation", "oracle_runs": 1, "accepted": 1, "direct_loc_removed": 1, "eventually_enabled_loc_removal": "yes"},
+    {"family": "call-result/assignment inlining", "oracle_runs": 55, "accepted": 11, "direct_loc_removed": 11, "eventually_enabled_loc_removal": "yes; primary direct structural contributor"},
+    {"family": "wrapper reduction", "oracle_runs": 3, "accepted": 3, "direct_loc_removed": 0, "eventually_enabled_loc_removal": "yes; fixed-point cleanup"},
+    {"family": "main/guard reduction", "oracle_runs": 1, "accepted": 1, "direct_loc_removed": 1, "eventually_enabled_loc_removal": "yes"},
+    {"family": "expression reduction", "oracle_runs": 16, "accepted": 10, "direct_loc_removed": 0, "eventually_enabled_loc_removal": "not separately attributable; no causal claim"},
+    {"family": "interleaved dependency cleanup", "oracle_runs": "not isolated", "accepted": 17, "direct_loc_removed": "interleaved", "eventually_enabled_loc_removal": "yes"}
+  ],
+  "expression_policy": {
+    "expensive_oracle_median_threshold_seconds": 2.0,
+    "observed_median_seconds": 4.009,
+    "global_expression_candidate_budget": 16,
+    "v3_expression_oracle_runs": 16,
+    "v2_expression_oracle_runs": 98,
+    "estimated_expression_time_saved_seconds": 361.46,
+    "time_saved_vs_v2_seconds": 552.545,
+    "policy": "Use a small deterministic global cap after recent candidate duration indicates an expensive oracle; cheap oracles receive a larger cap."
+  },
+  "limitations": [
+    "No formal minimality claim.",
+    "No universal semantic-equivalence or reduction-quality claim.",
+    "No parallel compiler run.",
+    "Expression causal enablement was not isolated beyond fixed-point phase records.",
+    "V2/V3 non-Inductor times for large exception and generated PyTorch use the recorded benchmark runs and are not a new claim about all environments."
+  ],
+  "records": [
+    "reports/PLUMBING_REDUCTION_V3.md",
+    "reports/inductor_plumbing_v3.json",
+    "reports/inductor_plumbing_v3_export/repro.py",
+    "reports/inductor_plumbing_v3_standalone_repeats.json",
+    "reports/plumbing_reduction_v3_regressions.json"
+  ]
+}
