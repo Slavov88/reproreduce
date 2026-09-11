@@ -2,10 +2,10 @@
 
 ## Status
 
-**READY_FOR_V0.2** after release-branch CI and merged-main CI pass. PyPI publication is explicitly out of scope.
+**READY_FOR_V0.2.** Release-branch and merged-main CI pass. PyPI publication is explicitly out of scope.
 
 - Version: `0.2.0`
-- Release-preparation commit: this release-preparation commit
+- Release commit candidate: `e6a990b5f497c986c0844995b7b69c8660522b68`
 - PR #11 merge commit: `2c2df44`
 - Prior release: `v0.1.0` unchanged
 
@@ -41,7 +41,7 @@ The historical compiler fingerprint is `AssertionError + _call_user_compiler + n
 - Final local suite: **127 passed, 380 subtests passed**.
 - `compileall`: passed before release preparation.
 - PR #11 required CI: all checks passed across core Python 3.10–3.12, PyTorch, and hunt jobs.
-- Merged-main CI: to be verified on the exact merge commit before tagging.
+- Merged-main CI: passed on exact commit `e6a990b5f497c986c0844995b7b69c8660522b68` (workflow run `34590422004`).
 
 ## Compatibility and defaults
 
@@ -59,4 +59,4 @@ The historical compiler fingerprint is `AssertionError + _call_user_compiler + n
 
 ## Release blockers
 
-None identified, conditional on required CI passing for the exact merged-main release commit.
+None identified.
