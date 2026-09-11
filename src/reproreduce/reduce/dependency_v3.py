@@ -366,6 +366,12 @@ def _run_phase(current: str, phase: str, generator, test, history, record_candid
         accepted = False
         seen: set[str] = set()
         for candidate in candidates:
+            session = getattr(test, "session", None)
+            if phase == "expression" and session is not None:
+                budget = int(getattr(session, "_v3_expression_budget", 0) or 0)
+                if budget and int(getattr(session, "_v3_expression_candidates_seen", 0)) >= budget:
+                    return current, changed
+                session._v3_expression_candidates_seen = int(getattr(session, "_v3_expression_candidates_seen", 0)) + 1
             if max_candidates is not None and candidates_seen >= max_candidates:
                 return current, changed
             candidate_source = _apply_candidate(current, candidate)
@@ -379,7 +385,6 @@ def _run_phase(current: str, phase: str, generator, test, history, record_candid
             except SyntaxError:
                 record_candidate(phase, False, current, candidate_source, 0)
                 continue
-            session = getattr(test, "session", None)
             before_runs = int(getattr(session, "_candidate_runs", 0))
             outcome = invoke_test(test, candidate_source, metadata={"transform": "DependencyV3", "dependency_phase": phase, "label": candidate.label})
             oracle_runs = int(getattr(session, "_candidate_runs", 0)) - before_runs
