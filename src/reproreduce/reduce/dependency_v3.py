@@ -9,7 +9,13 @@ from dataclasses import dataclass
 
 from .ast import render_module
 from .dependency import reduce_dependency
-from .dependency_v2 import _call_result_candidates, _control_flow_candidates
+from .dependency_v2 import (
+    V2Candidate,
+    _call_result_candidates,
+    _control_flow_candidates,
+    _function_candidates,
+    apply_candidate as apply_v2_candidate,
+)
 from .scheduler import invoke_test
 
 
@@ -102,6 +108,12 @@ def _function_model_bindings(tree: ast.Module, models: dict[str, dict[str, ast.e
     functions = [node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
     by_name = {node.name: node for node in functions if not node.decorator_list and not node.args.vararg and not node.args.kwarg}
     bindings: dict[NodeKey, dict[str, dict[str, ast.expr]]] = { _key(node): {} for node in functions }
+    for function in functions:
+        for item in function.body:
+            if isinstance(item, ast.Assign) and len(item.targets) == 1 and isinstance(item.targets[0], ast.Name):
+                value = item.value
+                if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in models and not value.args and not value.keywords:
+                    bindings[_key(function)][item.targets[0].id] = models[value.func.id]
     changed = True
     while changed:
         changed = False
@@ -329,7 +341,9 @@ def _apply_guard(source: str, candidate: V3Candidate) -> str:
     return _flatten_statement(source, V3Candidate(candidate.phase, candidate.label, candidate.action, candidate.target), node.body)
 
 
-def _apply_candidate(source: str, candidate: V3Candidate) -> str:
+def _apply_candidate(source: str, candidate) -> str:
+    if isinstance(candidate, V2Candidate):
+        return apply_v2_candidate(source, candidate)
     if candidate.action == "replace_expression":
         return _replace_expression(source, candidate)
     if candidate.action == "replace_assignment":
@@ -389,6 +403,7 @@ def reduce_plumbing_v3(source: str, test, history: list[dict[str, object]], reco
             current = cleaned
             round_changed = True
         phases = (
+            ("parameter_call", _function_candidates, None),
             ("config", _config_candidates, None),
             ("alias", _assignment_candidates, None),
             ("literal", _literal_lookup_candidates, None),
