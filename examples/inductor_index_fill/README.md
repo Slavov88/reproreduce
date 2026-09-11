@@ -36,3 +36,7 @@ python .hunt/inductor-index-fill-reduced/repro.py
 ```
 
 This fixture is historical evidence and a product smoke test; it does not claim a new or currently unfixed PyTorch bug.
+
+## Automatically reduced V0.2 reference
+
+`reduced_v02.py` is the 12-nonblank-LOC standalone output recorded from `strategy="dependency_v3"`. It is retained alongside the original fixture; it is not claimed formally minimal.

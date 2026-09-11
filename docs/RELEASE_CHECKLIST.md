@@ -1,6 +1,6 @@
-# v0.1 release verification
+# v0.2 release verification
 
-This checklist is intentionally local and does not publish a package or create a Git tag.
+This checklist verifies the source release and GitHub publication. It does not publish to PyPI.
 
 ## Clean installation
 
@@ -22,6 +22,8 @@ reproreduce summarize --help
 
 ```bash
 reproreduce reduce examples/exception_bug/bug.py \
+  --strategy dependency_v3 \
+  --jobs 1 \
   --exception-type RuntimeError \
   --message REPROREDUCE_TARGET \
   --output repro-smoke
@@ -36,6 +38,8 @@ In a stable environment known to reproduce the historical issue:
 
 ```bash
 reproreduce reduce examples/inductor_index_fill/bug.py \
+  --strategy dependency_v3 \
+  --jobs 1 \
   --exception-type AssertionError \
   --message "n=copy_" \
   --timeout 60 \
@@ -58,4 +62,6 @@ python -m compileall src
 - `git status --short`
 - confirm `.hunt/`, virtual environments, caches, and generated exports are ignored;
 - confirm README commands match the installed CLI;
+- confirm `reproreduce --version` reports `0.2.0`;
+- confirm `dependency_v3` is accepted and `--jobs 1` remains the safe compiler setting;
 - confirm no PyTorch issue, GitHub release, or PyPI publication is performed automatically.

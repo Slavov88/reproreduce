@@ -6,22 +6,22 @@ ReproReduce is a failure-preserving reducer for self-contained Python programs a
 
 Compiler failures are often buried under irrelevant setup. ReproReduce turns a large failing script into a smaller artifact that is easier to debug or attach to an issue.
 
-**ReproReduce has been computationally verified on failing programs containing hundreds of lines, including 273 → 3 nonblank-LOC Python, 200 → 5 nonblank-LOC nested Python, 331 → 3 nonblank-LOC generated PyTorch, and 152 → 12 nonblank-LOC historical PyTorch Inductor reductions, with target failures preserved in standalone reproducers.**
+**ReproReduce has been computationally verified reducing hundreds-line failing Python and PyTorch programs to standalone reproducers as small as 1 LOC, including a 152-line historical PyTorch Inductor failure reduced to 12 LOC while preserving the same normalized failure fingerprint.**
 
 ## Verified reductions
 
 | Case | Type | Original | Reduced | Reduction | Preserved |
 |---|---|---:|---:|---:|---|
-| Large Python exception | Synthetic | 273 nonblank LOC | 3 LOC | 98.9% | Yes |
+| Large Python exception | Synthetic | 273 nonblank LOC | 1 LOC | 99.6% | Yes |
+| Nested Python | Synthetic | 200 nonblank LOC | 1 LOC | 99.5% | Yes |
+| Generated PyTorch program | Generated realistic | 331 nonblank LOC | 1 LOC | 99.7% | Yes |
 | Historical PyTorch Inductor bug | Historical real bug | 152 nonblank LOC | 12 LOC | 92.1% | Yes |
-| Nested Python | Synthetic | 200 nonblank LOC | 5 LOC | 97.5% | Yes |
-| Generated PyTorch program | Generated realistic | 331 nonblank LOC | 3 LOC | 99.1% | Yes |
 
 > **Historical Inductor result:** Dependency V3 reduced the 152-line historical fixture to 12 nonblank LOC while preserving the stable Inductor `AssertionError` at `_call_user_compiler` containing `n=copy_`. The exported standalone reproducer reproduced the target in 5/5 fresh processes. This corresponds to [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952); the latest nightly tested by this project fixes it. The prior 22-line V2 result and V2 cost details remain in the reports. This is a historical reduction, not a claim that ReproReduce discovered the issue or that it is currently unfixed.
 
 Large reductions currently take minutes rather than seconds. Compiler-backed cases can be substantially slower because candidate evaluation invokes compiler work; performance optimization is an active development area.
 
-See the [large-reduction baseline report](reports/LARGE_REDUCTION_BENCHMARKS_V1.md) and [Dependency V2 validation report](reports/INDUCTOR_DEPENDENCY_REDUCTION_V2_RETRY.md) for environments, costs, fingerprint details, and limitations.
+See the [large-reduction baseline report](reports/LARGE_REDUCTION_BENCHMARKS_V1.md), [Dependency V2 validation report](reports/INDUCTOR_DEPENDENCY_REDUCTION_V2_RETRY.md), and [Plumbing V3 validation report](reports/PLUMBING_REDUCTION_V3.md) for environments, costs, fingerprint details, and limitations.
 
 ## Install
 
@@ -50,6 +50,12 @@ reproreduce reduce examples/exception_bug/bug.py \
 python repro/repro.py
 ```
 
+For the strongest current generic plumbing reduction, opt in explicitly:
+
+```bash
+reproreduce reduce bug.py --strategy dependency_v3 --jobs 1 --output repro-v3
+```
+
 The input is never modified. An export contains:
 
 ```text
@@ -66,6 +72,8 @@ The tracked fixture in `examples/inductor_index_fill/bug.py` reproduces a histor
 
 ```bash
 reproreduce reduce examples/inductor_index_fill/bug.py \
+  --strategy dependency_v3 \
+  --jobs 1 \
   --exception-type AssertionError \
   --message "n=copy_" \
   --timeout 60 \
@@ -73,7 +81,7 @@ reproreduce reduce examples/inductor_index_fill/bug.py \
 python .hunt/inductor-index-fill-reduced/repro.py
 ```
 
-In the verified PyTorch 2.5.1+cu124 environment, the 26-line fixture reduced to 13 nonblank lines while preserving the `n=copy_` assertion fingerprint. Eager execution succeeds; the compiled Inductor path fails. The issue is known upstream as [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952) and passes on the latest nightly tested by this project, so this example does not claim a current unfixed bug.
+The automatically reduced 12-line reference is retained at [`reduced_v02.py`](examples/inductor_index_fill/reduced_v02.py). In the verified PyTorch 2.5.1+cu124 environment, the 26-line fixture reduced to 13 nonblank lines while preserving the `n=copy_` assertion fingerprint. Eager execution succeeds; the compiled Inductor path fails. The issue is known upstream as [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952) and passes on the latest nightly tested by this project, so this example does not claim a current unfixed bug.
 
 ## What ReproReduce validates
 
@@ -91,6 +99,15 @@ In the verified PyTorch 2.5.1+cu124 environment, the 26-line fixture reduced to 
 - standalone export with environment and reduction metadata.
 
 A compiler crash is not automatically a novel bug, and a numerical discrepancy is not automatically a correctness defect. Re-run candidates, inspect the failure stage, compare controls, and check upstream reports.
+
+## Reduction strategies and parallelism
+
+- `standard`: conservative/basic reduction and the default for compatibility.
+- `dependency`: opt-in dependency-aware reduction V1.
+- `dependency_v2`: opt-in coordinated dependency/control-flow reduction retained for reproducibility.
+- `dependency_v3`: strongest current generic plumbing reduction, including configuration, alias, wrapper, and cost-aware expression handling.
+
+All strategies remain oracle-validated. `--jobs N` enables bounded parallel candidate evaluation and defaults to serial `--jobs 1`. Recorded Python benchmarks showed approximately 1.68x speedup for the large exception and 1.83x for nested Python at `jobs=4`, but compiler/GPU-heavy reductions should generally remain at `jobs=1` unless resource headroom is known to be sufficient.
 
 ## Python API
 
@@ -142,9 +159,9 @@ Execution statuses include `PASS`, `COMPILE_FAILURE`, `COMPILED_RUNTIME_FAILURE`
 
 These labels describe evidence, not certainty. In particular, compiler failure does not imply a PyTorch defect, and a fixed nightly result does not imply that the stable version was never defective.
 
-## v0.1 scope and limitations
+## v0.2 scope and limitations
 
-ReproReduce v0.1 supports self-contained Python scripts, exception-preserving AST reduction, selected PyTorch tensor/module reductions, eager/compiled differential checks, repeated validation, failure clustering, structured Inductor hunts, and standalone export.
+ReproReduce v0.2 supports self-contained Python scripts, exception-preserving AST reduction, dependency-aware plumbing reduction, selected PyTorch tensor/module reductions, eager/compiled differential checks, repeated validation, failure clustering, structured Inductor hunts, bounded parallel candidate evaluation, and standalone export.
 
 It does **not** promise arbitrary-project reduction, global minimality, universal `torch.compile` support, automatic upstream issue filing, distributed or multi-GPU support, or support for every tensor/operator/dynamic-shape combination. Generated hunt artifacts and caches belong in ignored `.hunt/`; historical research evidence is documented under `reports/`.
 
@@ -156,7 +173,7 @@ python -m unittest discover -s tests -v
 python -m compileall src
 ```
 
-See `docs/ARCHITECTURE.md` for the pipeline and `docs/RELEASE_CHECKLIST.md` for the v0.1 verification sequence. Research results and limitations are summarized in `reports/STATUS.md`.
+See `docs/ARCHITECTURE.md` for the pipeline and `docs/RELEASE_CHECKLIST.md` for the v0.2 verification sequence. Research results and limitations are summarized in `reports/STATUS.md`.
 
 ## License
 
