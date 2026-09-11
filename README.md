@@ -6,18 +6,18 @@ ReproReduce is a failure-preserving reducer for self-contained Python programs a
 
 Compiler failures are often buried under irrelevant setup. ReproReduce turns a large failing script into a smaller artifact that is easier to debug or attach to an issue.
 
-**ReproReduce has been computationally verified on failing programs containing hundreds of lines, including 273 → 3 nonblank-LOC Python, 200 → 5 nonblank-LOC nested Python, 331 → 3 nonblank-LOC generated PyTorch, and 152 → 22 nonblank-LOC historical PyTorch Inductor reductions, with target failures preserved in standalone reproducers.**
+**ReproReduce has been computationally verified on failing programs containing hundreds of lines, including 273 → 3 nonblank-LOC Python, 200 → 5 nonblank-LOC nested Python, 331 → 3 nonblank-LOC generated PyTorch, and 152 → 12 nonblank-LOC historical PyTorch Inductor reductions, with target failures preserved in standalone reproducers.**
 
 ## Verified reductions
 
 | Case | Type | Original | Reduced | Reduction | Preserved |
 |---|---|---:|---:|---:|---|
 | Large Python exception | Synthetic | 273 nonblank LOC | 3 LOC | 98.9% | Yes |
-| Historical PyTorch Inductor bug | Historical real bug | 152 nonblank LOC | 22 LOC | 85.5% | Yes |
+| Historical PyTorch Inductor bug | Historical real bug | 152 nonblank LOC | 12 LOC | 92.1% | Yes |
 | Nested Python | Synthetic | 200 nonblank LOC | 5 LOC | 97.5% | Yes |
 | Generated PyTorch program | Generated realistic | 331 nonblank LOC | 3 LOC | 99.1% | Yes |
 
-> **Historical Inductor result:** Dependency V2 reduced the 152-line historical fixture to 22 nonblank LOC while preserving the stable Inductor `AssertionError` at `_call_user_compiler` containing `n=copy_`. The exported standalone reproducer reproduced the target in 5/5 fresh processes. This corresponds to [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952); the latest nightly tested by this project fixes it. The prior 28-line result and V2 cost details remain in the reports. This is a historical reduction, not a claim that ReproReduce discovered the issue or that it is currently unfixed.
+> **Historical Inductor result:** Dependency V3 reduced the 152-line historical fixture to 12 nonblank LOC while preserving the stable Inductor `AssertionError` at `_call_user_compiler` containing `n=copy_`. The exported standalone reproducer reproduced the target in 5/5 fresh processes. This corresponds to [PyTorch #178952](https://github.com/pytorch/pytorch/issues/178952); the latest nightly tested by this project fixes it. The prior 22-line V2 result and V2 cost details remain in the reports. This is a historical reduction, not a claim that ReproReduce discovered the issue or that it is currently unfixed.
 
 Large reductions currently take minutes rather than seconds. Compiler-backed cases can be substantially slower because candidate evaluation invokes compiler work; performance optimization is an active development area.
 

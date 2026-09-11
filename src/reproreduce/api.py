@@ -22,7 +22,8 @@ def reduce(
 
     ``strategy="dependency"`` enables V1 conservative static candidate proposals;
     ``strategy="dependency_v2"`` additionally explores coordinated local-function,
-    control-flow, call-result, and expression candidates;
+    control-flow, call-result, and expression candidates; ``dependency_v3`` adds
+    bounded plumbing/configuration reduction with cost-aware expression search.
     every accepted proposal is still checked by the configured oracle.
     """
     selected_oracle = oracle or ExceptionOracle()
