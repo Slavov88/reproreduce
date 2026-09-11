@@ -16,6 +16,7 @@ from .run import RunResult
 from ..reduce.ast import reduce_top_level_statements
 from ..reduce.dependency import reduce_dependency
 from ..reduce.dependency_v2 import reduce_dependency_v2
+from ..reduce.dependency_v3 import reduce_plumbing_v3
 from ..pytorch.modules import reduce_module_lists, reduce_sequential_modules
 from ..pytorch.tensors import reduce_tensor_constructors
 
@@ -134,8 +135,8 @@ class ReductionSession:
     ):
         if jobs < 1:
             raise ValueError("jobs must be at least 1")
-        if strategy not in {"standard", "dependency", "dependency_v2"}:
-            raise ValueError("strategy must be 'standard', 'dependency', or 'dependency_v2'")
+        if strategy not in {"standard", "dependency", "dependency_v2", "dependency_v3"}:
+            raise ValueError("strategy must be 'standard', 'dependency', 'dependency_v2', or 'dependency_v3'")
         self.program = program.resolve()
         self.oracle = oracle
         self.timeout = timeout
@@ -166,6 +167,10 @@ class ReductionSession:
         self._v2_phase_metrics: dict[str, dict[str, float | int]] = {
             phase: {"candidates": 0, "oracle_runs": 0, "accepted": 0, "loc_removed": 0, "elapsed_seconds": 0.0}
             for phase in ("parameter_call", "call_result", "control_flow", "expression")
+        }
+        self._v3_phase_metrics: dict[str, dict[str, float | int]] = {
+            phase: {"candidates": 0, "oracle_runs": 0, "accepted": 0, "loc_removed": 0, "elapsed_seconds": 0.0}
+            for phase in ("config", "alias", "constant", "literal", "call_result", "wrapper", "main_guard", "control_flow", "expression")
         }
         self._baseline: OracleResult | None = None
         self._evaluations = 0
@@ -337,6 +342,34 @@ class ReductionSession:
 
     def _record_v2_phase_elapsed(self, phase: str, seconds: float) -> None:
         self._v2_phase_metrics.setdefault(
+            phase,
+            {"candidates": 0, "oracle_runs": 0, "accepted": 0, "loc_removed": 0, "elapsed_seconds": 0.0},
+        )["elapsed_seconds"] += seconds
+
+    def _record_v3_candidate(
+        self,
+        phase: str,
+        accepted: bool,
+        before_source: str,
+        after_source: str,
+        oracle_runs: int,
+    ) -> None:
+        metrics = self._v3_phase_metrics.setdefault(
+            phase,
+            {"candidates": 0, "oracle_runs": 0, "accepted": 0, "loc_removed": 0, "elapsed_seconds": 0.0},
+        )
+        metrics["candidates"] += 1
+        metrics["oracle_runs"] += oracle_runs
+        if accepted:
+            metrics["accepted"] += 1
+            metrics["loc_removed"] += max(
+                0,
+                sum(bool(line.strip()) for line in before_source.splitlines())
+                - sum(bool(line.strip()) for line in after_source.splitlines()),
+            )
+
+    def _record_v3_phase_elapsed(self, phase: str, seconds: float) -> None:
+        self._v3_phase_metrics.setdefault(
             phase,
             {"candidates": 0, "oracle_runs": 0, "accepted": 0, "loc_removed": 0, "elapsed_seconds": 0.0},
         )["elapsed_seconds"] += seconds
@@ -632,6 +665,17 @@ class ReductionSession:
                         record_phase_elapsed=self._record_v2_phase_elapsed,
                     )
                     self._history.extend(dependency_history)
+                elif self.strategy == "dependency_v3":
+                    reduced_source, dependency_history = reduce_plumbing_v3(
+                        reduced_source,
+                        candidate_test,
+                        [],
+                        self._record_dependency_candidate,
+                        self._record_v3_candidate,
+                        record_analysis=self._record_dependency_analysis,
+                        record_phase_elapsed=self._record_v3_phase_elapsed,
+                    )
+                    self._history.extend(dependency_history)
 
                 reduced_source, ast_history = reduce_top_level_statements(
                     reduced_source, candidate_test
@@ -672,6 +716,17 @@ class ReductionSession:
                         record_v2_candidate=self._record_v2_candidate,
                         record_analysis=self._record_dependency_analysis,
                         record_phase_elapsed=self._record_v2_phase_elapsed,
+                    )
+                    self._history.extend(dependency_history)
+                elif self.strategy == "dependency_v3":
+                    reduced_source, dependency_history = reduce_plumbing_v3(
+                        reduced_source,
+                        candidate_test,
+                        [],
+                        self._record_dependency_candidate,
+                        self._record_v3_candidate,
+                        record_analysis=self._record_dependency_analysis,
+                        record_phase_elapsed=self._record_v3_phase_elapsed,
                     )
                     self._history.extend(dependency_history)
 
@@ -757,6 +812,11 @@ class ReductionSession:
             **{
                 f"v2_{phase}_{metric}": value
                 for phase, phase_metrics in self._v2_phase_metrics.items()
+                for metric, value in phase_metrics.items()
+            },
+            **{
+                f"v3_{phase}_{metric}": value
+                for phase, phase_metrics in self._v3_phase_metrics.items()
                 for metric, value in phase_metrics.items()
             },
         }

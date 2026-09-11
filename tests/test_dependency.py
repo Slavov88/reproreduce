@@ -4,6 +4,14 @@ import ast
 
 import pytest
 
+from reproreduce.reduce.dependency_v3 import (
+    _assignment_candidates,
+    _config_candidates,
+    _guard_candidates,
+    _literal_lookup_candidates,
+    _wrapper_candidates,
+    _apply_candidate as apply_v3_candidate,
+)
 from reproreduce.reduce.dependency_v2 import (
     _control_flow_candidates,
     _expression_candidates,
@@ -124,6 +132,67 @@ def test_v2_oracle_preserves_target_on_small_fixture(tmp_path) -> None:
     assert "V2_TARGET" in result.reduced_run.stderr
     assert result.metrics["strategy"] == "dependency_v2"
     assert result.metrics["v2_parameter_call_candidates"] >= 1
+
+
+def test_v3_plumbing_candidates_are_generic_and_parseable() -> None:
+    source = """
+from dataclasses import dataclass
+@dataclass
+class Config:
+    rows: int = 2
+    cols: int = 3
+
+def run(config):
+    value = (config.rows, config.cols)
+    return value
+
+def main():
+    return run(Config())
+main()
+"""
+    candidates = (
+        _config_candidates(source)
+        + _assignment_candidates(source)
+        + _wrapper_candidates(source)
+        + _guard_candidates(source)
+        + _literal_lookup_candidates(source)
+    )
+    assert candidates
+    for candidate in candidates:
+        ast.parse(apply_v3_candidate(source, candidate))
+    assert _config_candidates(source)
+    assert _wrapper_candidates(source)
+
+
+def test_v3_strategy_is_exposed() -> None:
+    from reproreduce.cli.main import build_parser
+
+    args = build_parser().parse_args(["reduce", "program.py", "--strategy", "dependency_v3"])
+    assert args.strategy == "dependency_v3"
+
+
+def test_v3_oracle_preserves_target_on_small_fixture(tmp_path) -> None:
+    from reproreduce.api import reduce
+    from reproreduce.oracle.exception import ExceptionOracle
+
+    program = tmp_path / "program.py"
+    program.write_text(
+        "def main():\n"
+        "    value = 1\n"
+        "    if value:\n"
+        "        raise RuntimeError('V3_TARGET')\n"
+        "main()\n",
+        encoding="utf-8",
+    )
+    result = reduce(
+        program,
+        oracle=ExceptionOracle(exception_type="RuntimeError", message_regex="V3_TARGET"),
+        strategy="dependency_v3",
+        timeout=5,
+    )
+    assert "V3_TARGET" in result.reduced_run.stderr
+    assert result.metrics["strategy"] == "dependency_v3"
+    assert result.metrics["v3_wrapper_candidates"] >= 0
 
 
 def test_invalid_strategy_is_rejected(tmp_path) -> None:
