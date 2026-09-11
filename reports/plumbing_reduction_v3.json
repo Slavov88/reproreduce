@@ -1,11 +1,12 @@
 {
   "status": "COMPUTATIONALLY VERIFIED",
   "classification": "VERIFIED_HAND_CORE_LEVEL",
-  "commit": "c96d2f2a3414461ab8164e7dcf33038fdc0336be",
+  "validation_commit": "c96d2f2a3414461ab8164e7dcf33038fdc0336be",
+  "final_tree_commit": "1950fed18258604e72f4062457af58b98a43d2ec",
   "strategy": "dependency_v3",
   "jobs": 1,
   "oracle_policy": "Every accepted candidate was evaluated by the original configured failure oracle.",
-  "full_suite": {"status": "COMPUTATIONALLY VERIFIED", "tests": 125, "subtests": 380, "wall_time_seconds": 669.56},
+  "full_suite": {"status": "COMPUTATIONALLY VERIFIED", "tests": 127, "subtests": 380, "wall_time_seconds": 642.99},
   "benchmarks": {
     "historical_inductor": {
       "original_nonblank_loc": 152,

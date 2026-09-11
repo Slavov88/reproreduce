@@ -4,7 +4,7 @@
 
 **COMPUTATIONALLY VERIFIED — VERIFIED_HAND_CORE_LEVEL.** Generic `strategy="dependency_v3"` reduced the historical 152-nonblank-line Inductor fixture to **12 nonblank LOC**, below the known 13-line hand-triaged reference. This is not a formal minimality result.
 
-PR #10 was merged normally into `main` at `3850216`; work then started from `feat/plumbing-reduction-v3`. The released `v0.1.0` was not modified.
+PR #10 was merged normally into `main` at `3850216`; work then started from `feat/plumbing-reduction-v3`. The released `v0.1.0` was not modified. The compiler run was validated at `c96d2f2`; the final tree adds only stricter mutation/escape rejection guards after that run.
 
 ## V2 BASELINE PRESERVATION
 
@@ -132,7 +132,7 @@ The 12-line result is structurally different from the 13-line human reference an
 
 ## TESTS
 
-**COMPUTATIONALLY VERIFIED:** The final full suite passed: **125 tests and 380 subtests** in 669.56 seconds. The increase from the 122-test baseline is the three focused V3 tests; the subtest count is unchanged.
+**COMPUTATIONALLY VERIFIED:** The final full suite passed: **127 tests and 380 subtests** in 642.99 seconds. The increase from the 122-test baseline is the five focused V3 tests; the subtest count is unchanged. After compiler validation, the final tree added only stricter rejection guards for mutated/escaped config objects; no eligible historical target object uses those cases.
 
 ## LIMITATIONS
 
