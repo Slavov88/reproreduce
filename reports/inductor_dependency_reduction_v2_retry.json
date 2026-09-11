@@ -1,0 +1,71 @@
+{
+  "status": "STRONG_VERIFIED_IMPROVEMENT",
+  "commit": "2d63d810ce2e1f1d8d029d01f6728abf969a58c6",
+  "benchmark": "large_inductor_index_fill",
+  "configuration": {
+    "strategy": "dependency_v2",
+    "jobs": 1,
+    "candidate_timeout_seconds": 30,
+    "oracle": "AssertionError + _call_user_compiler + n=copy_"
+  },
+  "environment": {
+    "python": "3.10.11",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.5.1+cu121",
+    "torch_cuda": "12.1",
+    "torch_compile": true,
+    "torch_inductor_import": true,
+    "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "gpu_memory_total_mib": 4096,
+    "gpu_memory_free_mib": 3964,
+    "nvidia_driver": "566.07",
+    "windows_ram_total_gib": 15.42,
+    "windows_ram_available_gib_at_launch": 1.86,
+    "wsl_ram_total_gib": 7.46,
+    "wsl_ram_available_gib": 6.74,
+    "wsl_torch_triton": "not installed",
+    "disk_free_gib_at_check": 43.39
+  },
+  "preflight": {
+    "fixture": "examples/inductor_index_fill/bug.py",
+    "repetitions": 3,
+    "target_failures": 3,
+    "classification": "TARGET_FAILURE",
+    "fingerprint": "AssertionError + _call_user_compiler + n=copy_",
+    "record": "reports/inductor_dependency_v2_preflight_current.json"
+  },
+  "previous_baseline": {
+    "original_nonblank_loc": 152,
+    "reduced_nonblank_loc": 28,
+    "reduction_percent": 81.57894736842105,
+    "oracle_executions": 78,
+    "wall_time_seconds": 577.8431013000081,
+    "source_sha256": "70d018b600711fdd7d96c05a7a17f7146a2c90ee82ccbc70c856bfdf0a26fc1a",
+    "fingerprint": "AssertionError + _call_user_compiler + n=copy_",
+    "standalone_repro": true
+  },
+  "v2_result": {
+    "original_nonblank_loc": 152,
+    "reduced_nonblank_loc": 22,
+    "reduced_physical_loc": 27,
+    "reduction_percent": 85.52631578947368,
+    "oracle_executions": 399,
+    "wall_time_seconds": 2184.732,
+    "source_sha256": "4ecfa69e581e9ef88a0b9baa4b155fe31c125e5ffdafa67365dea558bfac77b2",
+    "fingerprint": "AssertionError + _call_user_compiler + n=copy_",
+    "fingerprint_preserved": true,
+    "standalone_repetitions": 5,
+    "standalone_target_failures": 5
+  },
+  "phase_metrics": {
+    "parameter_call": {"candidates": 1, "oracle_runs": 1, "accepted": 1, "loc_removed": 0, "seconds": 7.6549},
+    "call_result": {"candidates": 50, "oracle_runs": 49, "accepted": 11, "loc_removed": 11, "seconds": 278.4361},
+    "control_flow": {"candidates": 1, "oracle_runs": 1, "accepted": 1, "loc_removed": 1, "seconds": 7.4919},
+    "expression": {"candidates": 100, "oracle_runs": 98, "accepted": 28, "loc_removed": 0, "seconds": 479.9176}
+  },
+  "nightly_control": "NOT CHECKED",
+  "parallel_compiler": "NOT ATTEMPTED",
+  "resource_failure_accepted_as_target": false,
+  "run_record": "reports/inductor_dependency_reduction_v2_run.json",
+  "reduced_source": "reports/inductor_dependency_reduction_v2_reduced.py"
+}
