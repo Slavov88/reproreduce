@@ -8,12 +8,12 @@ from reproreduce.cli.main import build_parser
 
 class ProductizationTests(unittest.TestCase):
     def test_version_and_public_api_are_available(self):
-        self.assertEqual(reproreduce.__version__, "0.1.0")
+        self.assertEqual(reproreduce.__version__, "0.2.0")
         self.assertTrue(callable(reproreduce.reduce))
         args = build_parser().parse_args(["summarize", "campaign.json"])
         self.assertEqual(args.command, "summarize")
-        reduce_args = build_parser().parse_args(["reduce", "program.py", "--strategy", "dependency_v2"])
-        self.assertEqual(reduce_args.strategy, "dependency_v2")
+        reduce_args = build_parser().parse_args(["reduce", "program.py", "--strategy", "dependency_v3"])
+        self.assertEqual(reduce_args.strategy, "dependency_v3")
 
     def test_flagship_fixture_is_tracked_and_parseable(self):
         root = Path(__file__).parents[1]
