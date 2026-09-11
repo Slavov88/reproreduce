@@ -172,6 +172,7 @@ class ReductionSession:
             phase: {"candidates": 0, "oracle_runs": 0, "accepted": 0, "loc_removed": 0, "elapsed_seconds": 0.0}
             for phase in ("config", "alias", "constant", "literal", "call_result", "wrapper", "main_guard", "control_flow", "expression")
         }
+        self._v3_expression_budget: int | None = None
         self._baseline: OracleResult | None = None
         self._evaluations = 0
         self._history: list[dict[str, object]] = []
@@ -819,4 +820,5 @@ class ReductionSession:
                 for phase, phase_metrics in self._v3_phase_metrics.items()
                 for metric, value in phase_metrics.items()
             },
+            "v3_expression_budget": self._v3_expression_budget or 0,
         }

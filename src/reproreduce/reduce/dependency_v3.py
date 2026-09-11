@@ -14,6 +14,7 @@ from .dependency_v2 import (
     _call_result_candidates,
     _control_flow_candidates,
     _function_candidates,
+    _expression_candidates,
     apply_candidate as apply_v2_candidate,
 )
 from .scheduler import invoke_test
@@ -423,8 +424,10 @@ def reduce_plumbing_v3(source: str, test, history: list[dict[str, object]], reco
         durations = list(getattr(session, "_candidate_durations", []))
         median = statistics.median(durations[-8:]) if durations else 0.0
         expression_budget = 16 if median >= 2.0 else 128
+        if session is not None:
+            session._v3_expression_budget = expression_budget
         started = time.perf_counter()
-        current, changed = _run_phase(current, "expression", _literal_lookup_candidates, test, history, record_v3_candidate, max_candidates=expression_budget)
+        current, changed = _run_phase(current, "expression", _expression_candidates, test, history, record_v3_candidate, max_candidates=expression_budget)
         if callable(record_phase_elapsed):
             record_phase_elapsed("expression", time.perf_counter() - started)
         round_changed = round_changed or changed
